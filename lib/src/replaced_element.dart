@@ -64,6 +64,7 @@ class TextContentElement extends ReplacedElement {
 class ImageContentElement extends ReplacedElement {
   final String src;
   final String alt;
+  final Map<String, String> headers;
 
   ImageContentElement({
     String name,
@@ -71,6 +72,7 @@ class ImageContentElement extends ReplacedElement {
     this.src,
     this.alt,
     dom.Element node,
+    this.headers,
   }) : super(name: name, style: style, node: node);
 
   @override
@@ -116,7 +118,7 @@ class ImageContentElement extends ReplacedElement {
       );
     } else {
       precacheImage(
-        NetworkImage(src),
+        NetworkImage(src, headers: headers),
         context.buildContext,
         onError: (exception, StackTrace stackTrace) {
           context.parser.onImageError?.call(exception, stackTrace);
@@ -158,6 +160,7 @@ class IframeContentElement extends ReplacedElement {
   final String src;
   final double width;
   final double height;
+  final Map<String, String> headers;
 
   IframeContentElement({
     String name,
@@ -166,6 +169,7 @@ class IframeContentElement extends ReplacedElement {
     this.width,
     this.height,
     dom.Element node,
+    this.headers,
   }) : super(name: name, style: style, node: node);
 
   @override
@@ -349,7 +353,10 @@ class RubyElement extends ReplacedElement {
   }
 }
 
-ReplacedElement parseReplacedElement(dom.Element element) {
+ReplacedElement parseReplacedElement(
+    dom.Element element, {
+      Map<String, String> headers,
+  }) {
   switch (element.localName) {
     case "audio":
       final sources = <String>[
@@ -376,6 +383,7 @@ ReplacedElement parseReplacedElement(dom.Element element) {
         src: element.attributes['src'],
         width: double.tryParse(element.attributes['width'] ?? ""),
         height: double.tryParse(element.attributes['height'] ?? ""),
+        headers: headers,
       );
     case "img":
       return ImageContentElement(
@@ -383,6 +391,7 @@ ReplacedElement parseReplacedElement(dom.Element element) {
         src: element.attributes['src'],
         alt: element.attributes['alt'],
         node: element,
+        headers: headers,
       );
     case "video":
       final sources = <String>[

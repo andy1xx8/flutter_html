@@ -22,18 +22,24 @@ typedef CustomRender = Widget Function(
 
 class HtmlParser extends StatelessWidget {
   final String htmlData;
+  dom.Document document;
   final String cssData;
   final OnTap onLinkTap;
   final OnTap onImageTap;
   final ImageErrorListener onImageError;
   final bool shrinkWrap;
+  final Map<String, String> headers;
 
   final Map<String, Style> style;
   final Map<String, CustomRender> customRender;
   final List<String> blacklistedElements;
 
+
+  StyledElement _cleanedTree;
+
   HtmlParser({
-    @required this.htmlData,
+    this.htmlData,
+    this.document,
     @required this.cssData,
     this.onLinkTap,
     this.onImageTap,
@@ -42,31 +48,36 @@ class HtmlParser extends StatelessWidget {
     this.style,
     this.customRender,
     this.blacklistedElements,
+    this.headers,
   });
 
   @override
   Widget build(BuildContext context) {
-    dom.Document document = parseHTML(htmlData);
-    css.StyleSheet sheet = parseCSS(cssData);
-    StyledElement lexedTree = lexDomTree(
-      document,
-      customRender?.keys?.toList() ?? [],
-      blacklistedElements,
-    );
-    StyledElement styledTree = applyCSS(lexedTree, sheet);
-    StyledElement inlineStyledTree = applyInlineStyles(styledTree);
-    StyledElement customStyledTree = _applyCustomStyles(inlineStyledTree);
-    StyledElement cascadedStyledTree = _cascadeStyles(customStyledTree);
-    StyledElement cleanedTree = cleanTree(cascadedStyledTree);
+    if(_cleanedTree == null) {
+      document = document??parseHTML(htmlData);
+
+      css.StyleSheet sheet = parseCSS(cssData);
+      StyledElement lexedTree = lexDomTree(
+        document,
+        customRender?.keys?.toList() ?? [],
+        blacklistedElements,
+        this.headers,
+      );
+      StyledElement styledTree = applyCSS(lexedTree, sheet);
+      StyledElement inlineStyledTree = applyInlineStyles(styledTree);
+      StyledElement customStyledTree = _applyCustomStyles(inlineStyledTree);
+      StyledElement cascadedStyledTree = _cascadeStyles(customStyledTree);
+      _cleanedTree = cleanTree(cascadedStyledTree);
+    }
+
     InlineSpan parsedTree = parseTree(
       RenderContext(
         buildContext: context,
         parser: this,
         style: Style.fromTextStyle(Theme.of(context).textTheme.body1),
       ),
-      cleanedTree,
+      _cleanedTree,
     );
-
     return RichText(text: parsedTree);
   }
 
@@ -85,6 +96,7 @@ class HtmlParser extends StatelessWidget {
     dom.Document html,
     List<String> customRenderTags,
     List<String> blacklistedElements,
+    Map<String, String> headers,
   ) {
     StyledElement tree = StyledElement(
       name: "[Tree Root]",
@@ -93,8 +105,12 @@ class HtmlParser extends StatelessWidget {
     );
 
     html.nodes.forEach((node) {
-      tree.children
-          .add(_recursiveLexer(node, customRenderTags, blacklistedElements));
+      tree.children.add(_recursiveLexer(
+          node,
+          customRenderTags,
+          blacklistedElements,
+        headers,
+      ));
     });
 
     return tree;
@@ -108,12 +124,17 @@ class HtmlParser extends StatelessWidget {
     dom.Node node,
     List<String> customRenderTags,
     List<String> blacklistedElements,
+      Map<String, String> headers,
   ) {
     List<StyledElement> children = List<StyledElement>();
 
     node.nodes.forEach((childNode) {
-      children.add(
-          _recursiveLexer(childNode, customRenderTags, blacklistedElements));
+      children.add(_recursiveLexer(
+          childNode,
+          customRenderTags,
+          blacklistedElements,
+          headers,
+      ));
     });
 
     //TODO(Sub6Resources): There's probably a more efficient way to look this up.
@@ -126,7 +147,7 @@ class HtmlParser extends StatelessWidget {
       } else if (INTERACTABLE_ELEMENTS.contains(node.localName)) {
         return parseInteractableElement(node, children);
       } else if (REPLACED_ELEMENTS.contains(node.localName)) {
-        return parseReplacedElement(node);
+        return parseReplacedElement(node, headers: headers);
       } else if (LAYOUT_ELEMENTS.contains(node.localName)) {
         return parseLayoutElement(node, children);
       } else if (TABLE_STYLE_ELEMENTS.contains(node.localName)) {

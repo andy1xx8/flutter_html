@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/html_parser.dart';
 import 'package:flutter_html/rich_text_parser.dart';
 import 'package:flutter_html/style.dart';
+import 'package:html/dom.dart';
 import 'image_properties.dart';
 
 class Html extends StatelessWidget {
@@ -35,7 +36,8 @@ class Html extends StatelessWidget {
   /// See [its wiki page](https://github.com/Sub6Resources/flutter_html/wiki/Style) for more info.
   Html({
     Key key,
-    @required this.data,
+    this.data,
+    this.document,
     this.css = "",
     @deprecated this.padding,
     @deprecated this.backgroundColor,
@@ -59,9 +61,11 @@ class Html extends StatelessWidget {
     @deprecated this.showImages = true,
     this.blacklistedElements = const [],
     this.style,
+    this.headers,
   }) : super(key: key);
 
   final String data;
+  Document document;
   final String css;
   final EdgeInsetsGeometry padding;
   final Color backgroundColor;
@@ -73,6 +77,7 @@ class Html extends StatelessWidget {
   final ImageErrorListener onImageError;
   final TextStyle linkStyle;
   final bool shrinkWrap;
+  final Map<String, String> headers;
 
   /// Properties for the Image widget that gets rendered by the rich text parser
   final ImageProperties imageProperties;
@@ -125,6 +130,7 @@ class Html extends StatelessWidget {
       width: width,
       child: HtmlParser(
         htmlData: data,
+        document: document,
         cssData: css,
         onLinkTap: onLinkTap,
         onImageTap: onImageTap,
@@ -133,6 +139,7 @@ class Html extends StatelessWidget {
         style: style,
         customRender: customRender,
         blacklistedElements: blacklistedElements,
+        headers: headers,
       ),
     );
   }

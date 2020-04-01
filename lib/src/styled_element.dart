@@ -97,12 +97,12 @@ StyledElement parseStyledElement(
       //TODO(Sub6Resources) this is a workaround for collapsing margins. Remove.
       if (element.parent.localName == "blockquote") {
         styledElement.style = Style(
-          margin: const EdgeInsets.only(left: 40.0, right: 40.0, bottom: 14.0),
+          margin: const EdgeInsets.only(left: 5.0, right: 5.0, bottom: 10.0),
           display: Display.BLOCK,
         );
       } else {
         styledElement.style = Style(
-          margin: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 14.0),
+          margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
           display: Display.BLOCK,
         );
       }

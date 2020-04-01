@@ -21,6 +21,7 @@ typedef CustomRender = Widget Function(
 );
 
 class HtmlParser extends StatelessWidget {
+  dom.Document document;
   final String htmlData;
   final String cssData;
   final OnTap onLinkTap;
@@ -32,8 +33,12 @@ class HtmlParser extends StatelessWidget {
   final Map<String, CustomRender> customRender;
   final List<String> blacklistedElements;
 
+
+  StyledElement _cleanedTree;
+
   HtmlParser({
-    @required this.htmlData,
+    this.document,
+    this.htmlData,
     @required this.cssData,
     this.onLinkTap,
     this.onImageTap,
@@ -42,11 +47,10 @@ class HtmlParser extends StatelessWidget {
     this.style,
     this.customRender,
     this.blacklistedElements,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    dom.Document document = parseHTML(htmlData);
+  }) {
+    if (document == null) {
+      document = parseHTML(htmlData);
+    }
     css.StyleSheet sheet = parseCSS(cssData);
     StyledElement lexedTree = lexDomTree(
       document,
@@ -57,17 +61,22 @@ class HtmlParser extends StatelessWidget {
     StyledElement inlineStyledTree = applyInlineStyles(styledTree);
     StyledElement customStyledTree = _applyCustomStyles(inlineStyledTree);
     StyledElement cascadedStyledTree = _cascadeStyles(customStyledTree);
-    StyledElement cleanedTree = cleanTree(cascadedStyledTree);
+    _cleanedTree = cleanTree(cascadedStyledTree);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
     InlineSpan parsedTree = parseTree(
       RenderContext(
         buildContext: context,
         parser: this,
         style: Style.fromTextStyle(Theme.of(context).textTheme.body1),
       ),
-      cleanedTree,
+      _cleanedTree,
     );
 
-    return StyledText(textSpan: parsedTree, style: cleanedTree.style);
+    return StyledText(textSpan: parsedTree, style: _cleanedTree.style);
   }
 
   /// [parseHTML] converts a string of HTML to a DOM document using the dart `html` library.

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/html_parser.dart';
 import 'package:flutter_html/rich_text_parser.dart';
 import 'package:flutter_html/style.dart';
+import 'package:html/dom.dart';
 import 'image_properties.dart';
 
 class Html extends StatelessWidget {
@@ -35,7 +36,8 @@ class Html extends StatelessWidget {
   /// See [its wiki page](https://github.com/Sub6Resources/flutter_html/wiki/Style) for more info.
   Html({
     Key key,
-    @required this.data,
+    this.data,
+    this.document,
     this.css = "",
     @deprecated this.padding,
     @deprecated this.backgroundColor,
@@ -59,9 +61,14 @@ class Html extends StatelessWidget {
     @deprecated this.showImages = true,
     this.blacklistedElements = const [],
     this.style,
-  }) : super(key: key);
+  }) : super(key: key) {
+    if(document == null) {
+      document = HtmlParser.parseHTML(data);
+    }
+  }
 
-  final String data;
+  String data;
+  Document document;
   final String css;
   final EdgeInsetsGeometry padding;
   final Color backgroundColor;
@@ -124,7 +131,7 @@ class Html extends StatelessWidget {
       color: backgroundColor,
       width: width,
       child: HtmlParser(
-        htmlData: data,
+        document: document,
         cssData: css,
         onLinkTap: onLinkTap,
         onImageTap: onImageTap,

@@ -61,6 +61,7 @@ class Html extends StatelessWidget {
     @deprecated this.showImages = true,
     this.blacklistedElements = const [],
     this.style,
+    this.headers,
   }) : super(key: key) {
     if(document == null) {
       document = HtmlParser.parseHTML(data);
@@ -80,6 +81,8 @@ class Html extends StatelessWidget {
   final ImageErrorListener onImageError;
   final TextStyle linkStyle;
   final bool shrinkWrap;
+
+  final Map<String,String> headers;
 
   /// Properties for the Image widget that gets rendered by the rich text parser
   final ImageProperties imageProperties;
@@ -140,6 +143,7 @@ class Html extends StatelessWidget {
         style: style,
         customRender: customRender,
         blacklistedElements: blacklistedElements,
+        headers: headers,
       ),
     );
   }

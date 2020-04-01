@@ -32,6 +32,7 @@ class HtmlParser extends StatelessWidget {
   final Map<String, Style> style;
   final Map<String, CustomRender> customRender;
   final List<String> blacklistedElements;
+  final Map<String,String> headers;
 
 
   StyledElement _cleanedTree;
@@ -47,6 +48,7 @@ class HtmlParser extends StatelessWidget {
     this.style,
     this.customRender,
     this.blacklistedElements,
+    this.headers,
   }) {
     if (document == null) {
       document = parseHTML(htmlData);
@@ -56,6 +58,7 @@ class HtmlParser extends StatelessWidget {
       document,
       customRender?.keys?.toList() ?? [],
       blacklistedElements,
+      headers,
     );
     StyledElement styledTree = applyCSS(lexedTree, sheet);
     StyledElement inlineStyledTree = applyInlineStyles(styledTree);
@@ -94,7 +97,7 @@ class HtmlParser extends StatelessWidget {
     dom.Document html,
     List<String> customRenderTags,
     List<String> blacklistedElements,
-  ) {
+      Map<String,String> headers) {
     StyledElement tree = StyledElement(
       name: "[Tree Root]",
       children: new List<StyledElement>(),
@@ -103,7 +106,10 @@ class HtmlParser extends StatelessWidget {
 
     html.nodes.forEach((node) {
       tree.children
-          .add(_recursiveLexer(node, customRenderTags, blacklistedElements));
+          .add(_recursiveLexer(node,
+          customRenderTags,
+          blacklistedElements,
+          headers));
     });
 
     return tree;
@@ -117,12 +123,13 @@ class HtmlParser extends StatelessWidget {
     dom.Node node,
     List<String> customRenderTags,
     List<String> blacklistedElements,
+    Map<String,String> headers,
   ) {
     List<StyledElement> children = List<StyledElement>();
 
     node.nodes.forEach((childNode) {
       children.add(
-          _recursiveLexer(childNode, customRenderTags, blacklistedElements));
+          _recursiveLexer(childNode, customRenderTags, blacklistedElements, headers));
     });
 
     //TODO(Sub6Resources): There's probably a more efficient way to look this up.
@@ -135,7 +142,7 @@ class HtmlParser extends StatelessWidget {
       } else if (INTERACTABLE_ELEMENTS.contains(node.localName)) {
         return parseInteractableElement(node, children);
       } else if (REPLACED_ELEMENTS.contains(node.localName)) {
-        return parseReplacedElement(node);
+        return parseReplacedElement(node, headers: headers);
       } else if (LAYOUT_ELEMENTS.contains(node.localName)) {
         return parseLayoutElement(node, children);
       } else if (TABLE_STYLE_ELEMENTS.contains(node.localName)) {

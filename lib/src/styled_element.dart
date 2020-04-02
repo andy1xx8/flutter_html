@@ -102,7 +102,8 @@ StyledElement parseStyledElement(
         );
       } else {
         styledElement.style = Style(
-          margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+//          margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+          margin: const EdgeInsets.symmetric( vertical: 10.0),
           display: Display.BLOCK,
         );
       }
@@ -129,7 +130,7 @@ StyledElement parseStyledElement(
       break;
     case "dd":
       styledElement.style = Style(
-        margin: EdgeInsets.only(left: 40.0),
+        margin: EdgeInsets.only(left: 10.0),
         display: Display.BLOCK,
       );
       break;
@@ -149,7 +150,7 @@ StyledElement parseStyledElement(
       break;
     case "dl":
       styledElement.style = Style(
-        margin: EdgeInsets.symmetric(vertical: 14.0),
+        margin: EdgeInsets.symmetric(vertical: 10.0),
         display: Display.BLOCK,
       );
       break;
@@ -167,7 +168,7 @@ StyledElement parseStyledElement(
       break;
     case "figure":
       styledElement.style = Style(
-        margin: EdgeInsets.symmetric(vertical: 14.0, horizontal: 40.0),
+        margin: EdgeInsets.symmetric(vertical: 10.0, horizontal: 5.0),
         display: Display.BLOCK,
       );
       break;

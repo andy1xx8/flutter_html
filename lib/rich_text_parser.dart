@@ -151,6 +151,7 @@ class HtmlRichTextParser extends StatelessWidget {
     this.onLinkTap,
     this.renderNewlines = false,
     this.html,
+    this.document,
     this.customEdgeInsets,
     this.customTextStyle,
     this.customTextAlign,
@@ -171,6 +172,7 @@ class HtmlRichTextParser extends StatelessWidget {
   final onLinkTap;
   final bool renderNewlines;
   final String html;
+  dom.Element document;
   final CustomEdgeInsets customEdgeInsets;
   final CustomTextStyle customTextStyle;
   final CustomTextAlign customTextAlign;
@@ -298,11 +300,14 @@ class HtmlRichTextParser extends StatelessWidget {
   Widget build(BuildContext context) {
     String data = html;
 
-    if (renderNewlines) {
-      data = data.replaceAll("\n", "<br />");
+
+    if(document == null) {
+      if (renderNewlines) {
+        data = data.replaceAll("\n", "<br />");
+      }
+      document = document??parser.parse(data).body;
     }
-    dom.Document document = parser.parse(data);
-    dom.Node body = document.body;
+    dom.Node body = document;
 
     List<Widget> widgetList = new List<Widget>();
     ParseContext parseContext = ParseContext(

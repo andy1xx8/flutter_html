@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/src/html_elements.dart';
 import 'package:flutter_html/style.dart';
 import 'package:html/dom.dart' as dom;
 //TODO(Sub6Resources) don't use the internal code of the html package as it may change unexpectedly.
 import 'package:html/src/query_selector.dart';
+
+
+typedef ListCharacter = String Function(int i);
 
 /// A [StyledElement] applies a style to all of its children.
 class StyledElement {
@@ -44,7 +48,9 @@ class StyledElement {
 }
 
 StyledElement parseStyledElement(
-    dom.Element element, List<StyledElement> children) {
+    dom.Element element,
+    List<StyledElement> children) {
+
   StyledElement styledElement = StyledElement(
     name: element.localName,
     elementId: element.id,
@@ -65,12 +71,12 @@ StyledElement parseStyledElement(
       continue italics;
     case "article":
       styledElement.style = Style(
-        display: Display.BLOCK,
+        display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
       );
       break;
     case "aside":
       styledElement.style = Style(
-        display: Display.BLOCK,
+        display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
       );
       break;
     bold:
@@ -98,13 +104,12 @@ StyledElement parseStyledElement(
       if (element.parent.localName == "blockquote") {
         styledElement.style = Style(
           margin: const EdgeInsets.only(left: 5.0, right: 5.0, bottom: 10.0),
-          display: Display.BLOCK,
+          display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
         );
       } else {
         styledElement.style = Style(
-//          margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
-          margin: const EdgeInsets.symmetric( vertical: 10.0),
-          display: Display.BLOCK,
+          margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+          display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
         );
       }
       break;
@@ -145,7 +150,7 @@ StyledElement parseStyledElement(
     case "div":
       styledElement.style = Style(
         margin: EdgeInsets.all(0),
-        display: Display.BLOCK,
+        display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
       );
       break;
     case "dl":
@@ -182,7 +187,7 @@ StyledElement parseStyledElement(
         fontSize: FontSize.xxLarge,
         fontWeight: FontWeight.bold,
         margin: EdgeInsets.symmetric(vertical: 18.67),
-        display: Display.BLOCK,
+        display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
       );
       break;
     case "h2":
@@ -190,7 +195,7 @@ StyledElement parseStyledElement(
         fontSize: FontSize.xLarge,
         fontWeight: FontWeight.bold,
         margin: EdgeInsets.symmetric(vertical: 17.5),
-        display: Display.BLOCK,
+        display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
       );
       break;
     case "h3":
@@ -198,7 +203,7 @@ StyledElement parseStyledElement(
         fontSize: FontSize(16.38),
         fontWeight: FontWeight.bold,
         margin: EdgeInsets.symmetric(vertical: 16.5),
-        display: Display.BLOCK,
+        display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
       );
       break;
     case "h4":
@@ -206,7 +211,7 @@ StyledElement parseStyledElement(
         fontSize: FontSize.medium,
         fontWeight: FontWeight.bold,
         margin: EdgeInsets.symmetric(vertical: 18.5),
-        display: Display.BLOCK,
+        display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
       );
       break;
     case "h5":
@@ -214,7 +219,7 @@ StyledElement parseStyledElement(
         fontSize: FontSize(11.62),
         fontWeight: FontWeight.bold,
         margin: EdgeInsets.symmetric(vertical: 19.25),
-        display: Display.BLOCK,
+        display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
       );
       break;
     case "h6":
@@ -222,7 +227,7 @@ StyledElement parseStyledElement(
         fontSize: FontSize(9.38),
         fontWeight: FontWeight.bold,
         margin: EdgeInsets.symmetric(vertical: 22),
-        display: Display.BLOCK,
+        display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
       );
       break;
     case "header":
@@ -303,7 +308,7 @@ StyledElement parseStyledElement(
     case "p":
       styledElement.style = Style(
         margin: EdgeInsets.symmetric(vertical: 14.0),
-        display: Display.BLOCK,
+        display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
       );
       break;
     case "pre":
@@ -311,7 +316,7 @@ StyledElement parseStyledElement(
         fontFamily: 'monospace',
         margin: EdgeInsets.symmetric(vertical: 14.0),
         whiteSpace: WhiteSpace.PRE,
-        display: Display.BLOCK,
+        display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
       );
       break;
     case "q":
@@ -326,7 +331,7 @@ StyledElement parseStyledElement(
       continue monospace;
     case "section":
       styledElement.style = Style(
-        display: Display.BLOCK,
+        display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
       );
       break;
     case "small":
@@ -364,7 +369,15 @@ StyledElement parseStyledElement(
       continue italics;
   }
 
+  if(children.isEmpty)
+    return EmptyContentElement();
   return styledElement;
 }
 
-typedef ListCharacter = String Function(int i);
+bool containsClazz(dom.Element element, String clazz) {
+  if(element.attributes!=null) {
+    return (element.attributes['class']??"").contains(clazz);
+  } else
+    return false;
+}
+

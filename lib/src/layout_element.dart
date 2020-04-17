@@ -47,7 +47,6 @@ class TableLayoutElement extends LayoutElement {
         .expand((i) => i)
         .toList()
         .asMap();
-
     return Container(
         decoration: BoxDecoration(
           color: style.backgroundColor,
@@ -55,21 +54,33 @@ class TableLayoutElement extends LayoutElement {
         ),
         width: style.width,
         height: style.height,
-        child: Table(
-          columnWidths: colWidths,
-          children: children
-              .map((c) {
-                if (c is TableSectionLayoutElement) {
-                  return c.toTableRows(context);
-                }
-                return null;
-              })
-              .where((t) {
-                return t != null;
-              })
-              .toList()
-              .expand((i) => i)
-              .toList(),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                primary: false,
+                physics: ClampingScrollPhysics(),
+                child: Table(
+                  defaultColumnWidth: FixedColumnWidth(120),
+                  columnWidths: colWidths,
+                  children: children
+                      .map((c) {
+                        if (c is TableSectionLayoutElement) {
+                          return c.toTableRows(context);
+                        }
+                        return null;
+                      })
+                      .where((t) {
+                        return t != null;
+                      })
+                      .toList()
+                      .expand((i) => i)
+                      .toList(),
+                ),
+              ),
+            ),
+          ],
         ));
   }
 }

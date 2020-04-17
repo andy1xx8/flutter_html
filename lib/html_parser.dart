@@ -22,13 +22,14 @@ typedef CustomRender = Widget Function(
 
 class HtmlParser extends StatelessWidget {
   final String htmlData;
-  dom.Document document;
+  dom.Element document;
   final String cssData;
   final OnTap onLinkTap;
   final OnTap onImageTap;
   final ImageErrorListener onImageError;
   final bool shrinkWrap;
   final Map<String, String> headers;
+  final Map<String, String> configs;
 
   final Map<String, Style> style;
   final Map<String, CustomRender> customRender;
@@ -49,6 +50,7 @@ class HtmlParser extends StatelessWidget {
     this.customRender,
     this.blacklistedElements,
     this.headers,
+    this.configs,
   });
 
   @override
@@ -62,6 +64,7 @@ class HtmlParser extends StatelessWidget {
         customRender?.keys?.toList() ?? [],
         blacklistedElements,
         this.headers,
+        this.configs,
       );
       StyledElement styledTree = applyCSS(lexedTree, sheet);
       StyledElement inlineStyledTree = applyInlineStyles(styledTree);
@@ -82,8 +85,8 @@ class HtmlParser extends StatelessWidget {
   }
 
   /// [parseHTML] converts a string of HTML to a DOM document using the dart `html` library.
-  static dom.Document parseHTML(String data) {
-    return htmlparser.parse(data);
+  static dom.Element parseHTML(String data) {
+    return htmlparser.parse(data).documentElement;
   }
 
   /// [parseCSS] converts a string of CSS to a CSS stylesheet using the dart `csslib` library.
@@ -93,24 +96,33 @@ class HtmlParser extends StatelessWidget {
 
   /// [lexDomTree] converts a DOM document to a simplified tree of [StyledElement]s.
   static StyledElement lexDomTree(
-    dom.Document html,
+    dom.Element html,
     List<String> customRenderTags,
     List<String> blacklistedElements,
     Map<String, String> headers,
+    Map<String, String> configs,
   ) {
     StyledElement tree = StyledElement(
       name: "[Tree Root]",
       children: new List<StyledElement>(),
-      node: html.documentElement,
+      node: html,
+      style: Style(
+        display: Display.BLOCK,
+        margin: EdgeInsets.all(8.0),
+      )
     );
 
     html.nodes.forEach((node) {
-      tree.children.add(_recursiveLexer(
-          node,
-          customRenderTags,
-          blacklistedElements,
+      var e = _recursiveLexer(
+        node,
+        customRenderTags,
+        blacklistedElements,
         headers,
-      ));
+        configs,
+      );
+      if(e!=null) {
+        tree.children.add(e);
+      }
     });
 
     return tree;
@@ -125,16 +137,20 @@ class HtmlParser extends StatelessWidget {
     List<String> customRenderTags,
     List<String> blacklistedElements,
       Map<String, String> headers,
+      Map<String, String> configs,
   ) {
     List<StyledElement> children = List<StyledElement>();
 
     node.nodes.forEach((childNode) {
-      children.add(_recursiveLexer(
-          childNode,
-          customRenderTags,
-          blacklistedElements,
-          headers,
-      ));
+      var e = _recursiveLexer(
+        childNode,
+        customRenderTags,
+        blacklistedElements,
+        headers,
+        configs,
+      );
+      if(e!=null)
+      children.add(e);
     });
 
     //TODO(Sub6Resources): There's probably a more efficient way to look this up.
@@ -147,7 +163,7 @@ class HtmlParser extends StatelessWidget {
       } else if (INTERACTABLE_ELEMENTS.contains(node.localName)) {
         return parseInteractableElement(node, children);
       } else if (REPLACED_ELEMENTS.contains(node.localName)) {
-        return parseReplacedElement(node, headers: headers);
+        return parseReplacedElement(node, headers: headers, configs: configs);
       } else if (LAYOUT_ELEMENTS.contains(node.localName)) {
         return parseLayoutElement(node, children);
       } else if (TABLE_STYLE_ELEMENTS.contains(node.localName)) {

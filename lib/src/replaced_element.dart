@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_html/src/utils.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_youtube/flutter_youtube.dart';
 import 'package:video_player/video_player.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter/material.dart';
@@ -181,7 +182,8 @@ class IframeContentElement extends ReplacedElement {
         initialUrl: src,
         javascriptMode: JavascriptMode.unrestricted,
         gestureRecognizers: {
-          Factory(() => PlatformViewVerticalGestureRecognizer())
+        //  Factory(() => PlatformViewVerticalGestureRecognizer()),
+          Factory<VerticalDragGestureRecognizer>(() => VerticalDragGestureRecognizer()),
         },
       ),
     );
@@ -272,7 +274,125 @@ class VideoContentElement extends ReplacedElement {
       ),
     );
   }
+
+
 }
+
+/// [VideoContentElement] is a [ContentElement] with a video file as its content.
+class YoutubeVideoContentElement extends ReplacedElement {
+  static const String YT_THUMBNAIL_HOST = "https://img.youtube.com/vi/";
+  static const String YT_THUMBNAIL_IMG = "/mqdefault.jpg";
+
+  final List<String> src;
+  final String apiKey;
+  final bool showControls;
+  final bool autoplay;
+  final bool loop;
+  final bool muted;
+  final double width;
+  final double height;
+
+  YoutubeVideoContentElement({
+    String name,
+    Style style,
+    this.src,
+    this.apiKey,
+    this.showControls,
+    this.autoplay,
+    this.loop,
+    this.muted,
+    this.width,
+    this.height,
+    dom.Element node,
+  }) : super(name: name, style: style, node: node);
+
+  @override
+  Widget toWidget(RenderContext context) {
+    var youtubeId = getYoutubeId(src.first);
+    final String thumbnail = getYoutubeThumbnailById(youtubeId);
+    return InkWell(
+      child: Container(
+        width: width ?? (height ?? 150) * 2,
+        height: height ?? (width ?? 300) / 2,
+        child: Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            thumbnail is String ?Image.network(
+              thumbnail,
+              fit: BoxFit.cover,
+            ): SizedBox(),
+            Container(
+              width: 45,
+              height: 45,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color.fromRGBO(43, 43, 43, 0.6),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.play_circle_outline,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      onTap: () {
+        FlutterYoutube.playYoutubeVideoById(
+          apiKey: apiKey,
+          videoId: youtubeId,
+          autoPlay: true,
+          fullScreen: true,
+        );
+      },
+    );
+  }
+
+
+
+  static String getYoutubeThumbnail(String url) {
+    try {
+      final String youtubeId = getYoutubeId(url);
+      if (youtubeId == null || youtubeId.isEmpty) return null;
+      return '$YT_THUMBNAIL_HOST$youtubeId$YT_THUMBNAIL_IMG';
+    } catch (ex) {
+      return null;
+    }
+  }
+
+  //youtubeId: id video yotuube
+  // return url of thumbnail or null
+  static String getYoutubeThumbnailById(String youtubeId) {
+    return '$YT_THUMBNAIL_HOST$youtubeId$YT_THUMBNAIL_IMG';
+  }
+
+  static bool isYoutubeUrl(url) {
+    return getYoutubeId(url) is String;
+  }
+
+  /// Converts fully qualified YouTube Url to video id.
+  static String getYoutubeId(String url) {
+    try {
+      if (url != null &&
+          (url.contains('youtube.com') || url.contains('youtu.be'))) {
+        for (var exp in [
+          RegExp(r"v=([_\-a-zA-Z0-9]{11}).*$"),
+          RegExp(r"^embed\/([_\-a-zA-Z0-9]{11}).*$"),
+          RegExp(r"\/([_\-a-zA-Z0-9]{11}).*$")
+        ]) {
+          Match match = exp.firstMatch(url);
+          if (match != null && match.groupCount >= 1) return match.group(1);
+        }
+      }
+      return null;
+    } catch (ex) {
+      return null;
+    }
+  }
+}
+
 
 /// [SvgContentElement] is a [ReplacedElement] with an SVG as its contents.
 class SvgContentElement extends ReplacedElement {
@@ -356,6 +476,7 @@ class RubyElement extends ReplacedElement {
 ReplacedElement parseReplacedElement(
     dom.Element element, {
       Map<String, String> headers,
+      Map<String, String> configs,
   }) {
   switch (element.localName) {
     case "audio":
@@ -378,6 +499,22 @@ ReplacedElement parseReplacedElement(
         style: Style(whiteSpace: WhiteSpace.PRE),
       );
     case "iframe":
+      var src = element.attributes['src'];
+      if(YoutubeVideoContentElement.isYoutubeUrl(src)) {
+        return YoutubeVideoContentElement(
+          name: "video",
+          src: [src],
+          apiKey: configs['youtube_api_key']??'AIzaSyAyFhyWwa61XumcG8MEzSk1cf3qRcKDWIk',
+          showControls: element.attributes['controls'] != null,
+          loop: element.attributes['loop'] != null,
+          autoplay: element.attributes['autoplay'] != null,
+          muted: element.attributes['muted'] != null,
+          width: double.tryParse(element.attributes['width'] ?? ""),
+          height: double.tryParse(element.attributes['height'] ?? ""),
+          node: element,
+        );
+      }
+
       return IframeContentElement(
         name: "iframe",
         src: element.attributes['src'],

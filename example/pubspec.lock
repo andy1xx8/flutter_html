@@ -89,12 +89,19 @@ packages:
       name: flutter_svg
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.14.1"
+    version: "0.17.3+1"
   flutter_test:
     dependency: "direct dev"
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_youtube:
+    dependency: transitive
+    description:
+      name: flutter_youtube
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.0.0"
   html:
     dependency: transitive
     description:

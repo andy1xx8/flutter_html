@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_html/html_parser.dart';
 import 'package:flutter_html/src/html_elements.dart';
@@ -19,15 +21,30 @@ abstract class LayoutElement extends StyledElement {
 }
 
 class TableLayoutElement extends LayoutElement {
+
+  int columnCount = 1;
+
   TableLayoutElement({
     String name,
     Style style,
     @required List<StyledElement> children,
     dom.Element node,
-  }) : super(name: name, style: style, children: children, node: node);
+  }) : super(name: name, style: style, children: children, node: node){
+    columnCount = children.where((e) => e is TableSectionLayoutElement)
+        .expand((e) => e.children)
+        .where((element) => element is TableRowLayoutElement)
+        .map((e) {
+      return e.children
+          .where((c) => c is StyledElement && c.name == 'td' || c.name == 'th')
+          .length;
+    }).firstWhere((e) => true, orElse: () => 1);
+
+    columnCount = columnCount > 0? columnCount:1;
+  }
 
   @override
   Widget toWidget(RenderContext context) {
+
     final colWidths = children
         .where((c) => c.name == "colgroup")
         .map((group) {
@@ -47,6 +64,7 @@ class TableLayoutElement extends LayoutElement {
         .expand((i) => i)
         .toList()
         .asMap();
+
     return Container(
         decoration: BoxDecoration(
           color: style.backgroundColor,
@@ -62,7 +80,7 @@ class TableLayoutElement extends LayoutElement {
                 primary: false,
                 physics: ClampingScrollPhysics(),
                 child: Table(
-                  defaultColumnWidth: FixedColumnWidth(120),
+                  defaultColumnWidth: FixedColumnWidth(max(MediaQuery.of(context.buildContext).size.width/columnCount, 120)),
                   columnWidths: colWidths,
                   children: children
                       .map((c) {

@@ -1,15 +1,19 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:chewie/chewie.dart';
 import 'package:chewie_audio/chewie_audio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_html/src/android_youtube_player_screen.dart';
+import 'package:flutter_html/src/giphy_utils.dart';
 import 'package:flutter_html/src/utils.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:webview_media/webview_flutter.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart' as android_youtube;
 import 'package:flutter_youtube/flutter_youtube.dart';
 import 'package:video_player/video_player.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_html/html_parser.dart';
@@ -127,6 +131,7 @@ class ImageContentElement extends ReplacedElement {
       );
       imageWidget = Image.network(
         src,
+        filterQuality : FilterQuality.high,
         frameBuilder: (ctx, child, frame, _) {
           if (frame == null) {
             return Text(alt ?? "", style: context.style.generateTextStyle());
@@ -280,6 +285,7 @@ class VideoContentElement extends ReplacedElement {
 
 /// [VideoContentElement] is a [ContentElement] with a video file as its content.
 class YoutubeVideoContentElement extends ReplacedElement {
+
   static const String YT_THUMBNAIL_HOST = "https://img.youtube.com/vi/";
   static const String YT_THUMBNAIL_IMG = "/mqdefault.jpg";
 
@@ -311,46 +317,66 @@ class YoutubeVideoContentElement extends ReplacedElement {
     var youtubeId = getYoutubeId(src.first);
     final String thumbnail = getYoutubeThumbnailById(youtubeId);
     return InkWell(
-      child: Container(
-        width: width ?? (height ?? 150) * 2,
-        height: height ?? (width ?? 300) / 2,
-        child: Stack(
-          alignment: Alignment.center,
-          children: <Widget>[
-            thumbnail is String ?Image.network(
-              thumbnail,
-              fit: BoxFit.cover,
-            ): SizedBox(),
-            Container(
-              width: 45,
-              height: 45,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color.fromRGBO(43, 43, 43, 0.6),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.play_circle_outline,
-                  color: Colors.white,
-                  size: 30,
+      child: AspectRatio(
+        aspectRatio: 16/9,
+        child: Container(
+//          width: width ?? (height ?? 150) * 2,
+          height: height ?? (width ?? 300) / 2,
+          child: Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              thumbnail is String ?Image.network(
+                thumbnail,
+                fit: BoxFit.cover,
+              ): SizedBox(),
+              Container(
+                width: 45,
+                height: 45,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color.fromRGBO(43, 43, 43, 0.6),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.play_circle_outline,
+                    color: Colors.white,
+                    size: 30,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       onTap: () {
-        FlutterYoutube.playYoutubeVideoById(
-          apiKey: apiKey,
-          videoId: youtubeId,
-          autoPlay: true,
-          fullScreen: true,
-        );
+        if(Platform.isAndroid) {
+          Navigator.of(context.buildContext).push(
+            MaterialPageRoute(
+              builder: (_) => AndroidYoutubePlayerScreen(
+                  src.first,
+                  onOpenYoutubeAppClicked: () {
+                    FlutterYoutube.playYoutubeVideoById(
+                      apiKey: apiKey,
+                      videoId: youtubeId,
+                      autoPlay: true,
+                      fullScreen: true,
+                    );
+                  }
+              ),
+              settings: null,
+            ),
+          );
+        } else {
+          FlutterYoutube.playYoutubeVideoById(
+            apiKey: apiKey,
+            videoId: youtubeId,
+            autoPlay: true,
+            fullScreen: true,
+          );
+        }
       },
     );
   }
-
-
 
   static String getYoutubeThumbnail(String url) {
     try {
@@ -390,6 +416,53 @@ class YoutubeVideoContentElement extends ReplacedElement {
     } catch (ex) {
       return null;
     }
+  }
+}
+
+class AndroidYoutubePlayerWidget extends StatefulWidget {
+  final String videoId;
+
+  AndroidYoutubePlayerWidget(this.videoId);
+
+  @override
+  _AndroidYoutubePlayerWidgetState createState() => _AndroidYoutubePlayerWidgetState();
+}
+
+class _AndroidYoutubePlayerWidgetState extends State<AndroidYoutubePlayerWidget> {
+  android_youtube.YoutubePlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = android_youtube.YoutubePlayerController(
+      initialVideoId: widget.videoId,
+      flags: android_youtube.YoutubePlayerFlags(
+        autoPlay: false,
+        mute: false,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return android_youtube.YoutubePlayer(
+      controller: _controller,
+      showVideoProgressIndicator: true,
+      progressIndicatorColor: Colors.amber,
+      progressColors: android_youtube.ProgressBarColors(
+        playedColor: Colors.amber,
+        handleColor: Colors.amberAccent,
+      ),
+      onReady: () {
+        _controller.cue(widget.videoId);
+      },
+    );
   }
 }
 
@@ -513,23 +586,47 @@ ReplacedElement parseReplacedElement(
           height: double.tryParse(element.attributes['height'] ?? ""),
           node: element,
         );
-      }
+      } else {
+        var giphyId = GiphyUtils.getId(src);
+        if(giphyId!=null && giphyId.isNotEmpty) {
+          return ImageContentElement(
+            name: "img",
+            src: GiphyUtils.buildGifUrlFromId(giphyId),
+            node: element,
+            headers: headers,
+          );
+        }
 
-      return IframeContentElement(
-        name: "iframe",
-        src: element.attributes['src'],
-        width: double.tryParse(element.attributes['width'] ?? ""),
-        height: double.tryParse(element.attributes['height'] ?? ""),
-        headers: headers,
-      );
+        return IframeContentElement(
+          name: "iframe",
+          src: element.attributes['src'],
+          width: double.tryParse(element.attributes['width'] ?? ""),
+          height: double.tryParse(element.attributes['height'] ?? ""),
+          headers: headers,
+        );
+      }
+      break;
     case "img":
-      return ImageContentElement(
-        name: "img",
-        src: element.attributes['src'],
-        alt: element.attributes['alt'],
-        node: element,
-        headers: headers,
-      );
+      var src = element.attributes['src'];
+
+      var giphyId = GiphyUtils.getId(src);
+      if(giphyId!=null && giphyId.isNotEmpty) {
+        return ImageContentElement(
+          name: "img",
+          src: GiphyUtils.buildGifUrlFromId(giphyId),
+          node: element,
+          headers: headers,
+        );
+      } else {
+        return ImageContentElement(
+          name: "img",
+          src: element.attributes['src'],
+          alt: element.attributes['alt'],
+          node: element,
+          headers: headers,
+        );
+      }
+      break;
     case "video":
       final sources = <String>[
         if (element.attributes['src'] != null) element.attributes['src'],
@@ -564,7 +661,7 @@ ReplacedElement parseReplacedElement(
 
 // TODO(Sub6Resources): Remove when https://github.com/flutter/flutter/issues/36304 is resolved
 class PlatformViewVerticalGestureRecognizer
-    extends VerticalDragGestureRecognizer {
+ extends VerticalDragGestureRecognizer {
   PlatformViewVerticalGestureRecognizer({PointerDeviceKind kind})
       : super(kind: kind);
 

@@ -152,6 +152,8 @@ StyledElement parseStyledElement(
         margin: EdgeInsets.all(0),
         display: containsClazz(element, 'inline')?Display.INLINE_BLOCK: Display.BLOCK,
       );
+      if(children.isEmpty)
+        return EmptyContentElement();
       break;
     case "dl":
       styledElement.style = Style(
@@ -369,8 +371,6 @@ StyledElement parseStyledElement(
       continue italics;
   }
 
-  if(children.isEmpty)
-    return EmptyContentElement();
   return styledElement;
 }
 

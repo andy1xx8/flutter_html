@@ -20,14 +20,21 @@ dependencies:
   chewie: ^0.9.8
 
   # Plugin for rendering the <iframe> tag.
-  webview_flutter: ^0.3.17
+  #webview_flutter: ^0.3.17
+  webview_media: ^0.1.2
+  flutter_webview_plugin:
+    path: /Volumes/Data/projects/open-source/flutter_webview_plugin/flutter_webview_plugin
 
   # Plugins for rendering the <audio> tag.
   chewie_audio: ^1.0.0+1
 
   # Plugins for rendering the <svg> tag.
   flutter_svg: ^0.17.3+1
+  #For iOS youtube player
   flutter_youtube: 2.0.0
+  #For Android youtube player only
+  youtube_player_flutter:
+    path:  /Volumes/Data/projects/open-source/youtube_player_flutter
 
   flutter:
     sdk: flutter

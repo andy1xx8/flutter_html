@@ -4,7 +4,9 @@
 [![CircleCI](https://circleci.com/gh/Sub6Resources/flutter_html.svg?style=svg)](https://circleci.com/gh/Sub6Resources/flutter_html)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](https://github.com/Sub6Resources/flutter_html/blob/master/LICENSE)
 
-A Flutter widget for rendering html and css as Flutter widgets.
+> **Note: 1.0.0-pre.1 has been released! See the [Migration Guide](https://github.com/Sub6Resources/flutter_html/wiki/1.0.0-Migration-Guide) if you'd like to take advantage of all the new features of 1.0.0! Also, check out the [Prerelease Changelog](https://github.com/Sub6Resources/flutter_html/blob/new-parser/PRE_CHANGELOG.md).** Version 1.0.0 is currently on the `new-parser` branch. This README will be updated when 1.0.0 is merged into the master branch.
+
+A Flutter widget for rendering static html tags as Flutter widgets. (Will render over 70 different html tags!)
 
 <img alt="A Screenshot of flutter_html" src=".github/flutter_html_screenshot.png" width="300"/>
 

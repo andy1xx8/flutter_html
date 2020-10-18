@@ -12,16 +12,16 @@ dependencies:
   html: ^0.14.0+2
 
   # Plugins for parsing css
-  csslib: ^0.16.1
+  csslib: ^0.16.2
   css_colors: ^1.0.2
 
   # Plugins for rendering the <video> tag.
-  video_player: ^0.10.2+1
-  chewie: ^0.9.8
+  video_player: ^0.10.11+2
+  chewie: 0.9.10
 
   # Plugin for rendering the <iframe> tag.
   #webview_flutter: ^0.3.17
-  webview_media: ^0.1.2
+  # webview_media: ^0.1.2
   flutter_webview_plugin:
     path: /Volumes/Data/projects/open-source/flutter_webview_plugin/flutter_webview_plugin
 
@@ -29,13 +29,14 @@ dependencies:
   chewie_audio: ^1.0.0+1
 
   # Plugins for rendering the <svg> tag.
-  flutter_svg: ^0.17.3+1
+  flutter_svg: ^0.18.0
   #For iOS youtube player
   flutter_youtube: 2.0.0
   #For Android youtube player only
-  youtube_player_flutter:
+  youtube_player_flutter: 
     path:  /Volumes/Data/projects/open-source/youtube_player_flutter
-
+  webview_media: ^0.1.2
+  cached_network_image: ^2.3.2+1
   flutter:
     sdk: flutter
 

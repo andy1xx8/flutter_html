@@ -80,7 +80,7 @@ class Html extends StatelessWidget {
   final TextStyle linkStyle;
   final bool shrinkWrap;
   final Map<String, String> headers;
-  final Map<String, String> configs;
+  final Map<String, dynamic> configs;
 
   /// Properties for the Image widget that gets rendered by the rich text parser
   final ImageProperties imageProperties;

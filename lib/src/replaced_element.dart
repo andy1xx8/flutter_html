@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chewie/chewie.dart';
 import 'package:chewie_audio/chewie_audio.dart';
 import 'package:flutter/foundation.dart';
@@ -28,17 +30,11 @@ import 'package:html/dom.dart' as dom;
 abstract class ReplacedElement extends StyledElement {
   PlaceholderAlignment alignment;
 
-  ReplacedElement(
-      {String name,
-      Style style,
-      dom.Element node,
-      this.alignment = PlaceholderAlignment.aboveBaseline})
+  ReplacedElement({String name, Style style, dom.Element node, this.alignment = PlaceholderAlignment.aboveBaseline})
       : super(name: name, children: null, style: style, node: node);
 
   static List<String> parseMediaSources(List<dom.Element> elements) {
-    return elements
-        .where((element) => element.localName == 'source')
-        .map((element) {
+    return elements.where((element) => element.localName == 'source').map((element) {
       return element.attributes['src'];
     }).toList();
   }
@@ -70,6 +66,7 @@ class ImageContentElement extends ReplacedElement {
   final String src;
   final String alt;
   final Map<String, String> headers;
+  BaseCacheManager cacheManager;
 
   ImageContentElement({
     String name,
@@ -78,6 +75,7 @@ class ImageContentElement extends ReplacedElement {
     this.alt,
     dom.Element node,
     this.headers,
+    this.cacheManager,
   }) : super(name: name, style: style, node: node);
 
   @override
@@ -131,7 +129,90 @@ class ImageContentElement extends ReplacedElement {
       );
       imageWidget = Image.network(
         src,
-        filterQuality : FilterQuality.high,
+        filterQuality: FilterQuality.low,
+        fit: BoxFit.scaleDown,
+        frameBuilder: (ctx, child, frame, _) {
+          if (frame == null) {
+            return Text(alt ?? "", style: context.style.generateTextStyle());
+          }
+          return child;
+        },
+      );
+    }
+
+    return ContainerSpan(
+      style: style,
+      newContext: context,
+      shrinkWrap: context.parser.shrinkWrap,
+      child: GestureDetector(
+        child: imageWidget,
+        onTap: () => context.parser.onImageTap?.call(src),
+      ),
+    );
+  }
+}
+
+class CacheImageContentElement extends ReplacedElement {
+  final String src;
+  final String alt;
+  final Map<String, String> headers;
+  BaseCacheManager cacheManager;
+
+  CacheImageContentElement({
+    String name,
+    Style style,
+    this.src,
+    this.alt,
+    dom.Element node,
+    this.headers,
+    this.cacheManager,
+  }) : super(name: name, style: style, node: node);
+
+  @override
+  Widget toWidget(RenderContext context) {
+    Widget imageWidget;
+    if (src == null) {
+      imageWidget = Text(alt ?? "", style: context.style.generateTextStyle());
+    } else if (src.startsWith("data:image") && src.contains("base64,")) {
+      final decodedImage = base64.decode(src.split("base64,")[1].trim());
+      precacheImage(
+        MemoryImage(decodedImage),
+        context.buildContext,
+        onError: (exception, StackTrace stackTrace) {
+          context.parser.onImageError?.call(exception, stackTrace);
+        },
+      );
+      imageWidget = Image.memory(
+        decodedImage,
+        frameBuilder: (ctx, child, frame, _) {
+          if (frame == null) {
+            return Text(alt ?? "", style: context.style.generateTextStyle());
+          }
+          return child;
+        },
+      );
+    } else if (src.startsWith("asset:")) {
+      final assetPath = src.replaceFirst('asset:', '');
+      precacheImage(
+        AssetImage(assetPath),
+        context.buildContext,
+        onError: (exception, StackTrace stackTrace) {
+          context.parser.onImageError?.call(exception, stackTrace);
+        },
+      );
+      imageWidget = Image.asset(
+        assetPath,
+        frameBuilder: (ctx, child, frame, _) {
+          if (frame == null) {
+            return Text(alt ?? "", style: context.style.generateTextStyle());
+          }
+          return child;
+        },
+      );
+    } else {
+      imageWidget = Image(
+        image: CachedNetworkImageProvider(src, cacheManager: cacheManager, headers: headers),
+        filterQuality: FilterQuality.low,
         frameBuilder: (ctx, child, frame, _) {
           if (frame == null) {
             return Text(alt ?? "", style: context.style.generateTextStyle());
@@ -148,8 +229,7 @@ class ImageContentElement extends ReplacedElement {
       child: RawGestureDetector(
         child: imageWidget,
         gestures: {
-          MultipleTapGestureRecognizer: GestureRecognizerFactoryWithHandlers<
-              MultipleTapGestureRecognizer>(
+          MultipleTapGestureRecognizer: GestureRecognizerFactoryWithHandlers<MultipleTapGestureRecognizer>(
             () => MultipleTapGestureRecognizer(),
             (instance) {
               instance..onTap = () => context.parser.onImageTap?.call(src);
@@ -181,13 +261,15 @@ class IframeContentElement extends ReplacedElement {
   @override
   Widget toWidget(RenderContext context) {
     return Container(
+      key: ValueKey(src),
       width: width ?? (height ?? 150) * 2,
       height: height ?? (width ?? 300) / 2,
       child: WebView(
+        key: ValueKey(src),
         initialUrl: src,
         javascriptMode: JavascriptMode.unrestricted,
         gestureRecognizers: {
-        //  Factory(() => PlatformViewVerticalGestureRecognizer()),
+          //  Factory(() => PlatformViewVerticalGestureRecognizer()),
           Factory<VerticalDragGestureRecognizer>(() => VerticalDragGestureRecognizer()),
         },
       ),
@@ -268,9 +350,7 @@ class VideoContentElement extends ReplacedElement {
           videoPlayerController: VideoPlayerController.network(
             src.first ?? "",
           ),
-          placeholder: poster != null
-              ? Image.network(poster)
-              : Container(color: Colors.black),
+          placeholder: poster != null ? Image.network(poster) : Container(color: Colors.black),
           autoPlay: autoplay,
           looping: loop,
           showControls: showControls,
@@ -279,13 +359,10 @@ class VideoContentElement extends ReplacedElement {
       ),
     );
   }
-
-
 }
 
 /// [VideoContentElement] is a [ContentElement] with a video file as its content.
 class YoutubeVideoContentElement extends ReplacedElement {
-
   static const String YT_THUMBNAIL_HOST = "https://img.youtube.com/vi/";
   static const String YT_THUMBNAIL_IMG = "/mqdefault.jpg";
 
@@ -318,17 +395,19 @@ class YoutubeVideoContentElement extends ReplacedElement {
     final String thumbnail = getYoutubeThumbnailById(youtubeId);
     return InkWell(
       child: AspectRatio(
-        aspectRatio: 16/9,
+        aspectRatio: 16 / 9,
         child: Container(
 //          width: width ?? (height ?? 150) * 2,
           height: height ?? (width ?? 300) / 2,
           child: Stack(
             alignment: Alignment.center,
             children: <Widget>[
-              thumbnail is String ?Image.network(
-                thumbnail,
-                fit: BoxFit.cover,
-              ): SizedBox(),
+              thumbnail is String
+                  ? Image.network(
+                      thumbnail,
+                      fit: BoxFit.cover,
+                    )
+                  : SizedBox(),
               Container(
                 width: 45,
                 height: 45,
@@ -349,20 +428,17 @@ class YoutubeVideoContentElement extends ReplacedElement {
         ),
       ),
       onTap: () {
-        if(Platform.isAndroid) {
+        if (Platform.isAndroid) {
           Navigator.of(context.buildContext).push(
             MaterialPageRoute(
-              builder: (_) => AndroidYoutubePlayerScreen(
-                  src.first,
-                  onOpenYoutubeAppClicked: () {
-                    FlutterYoutube.playYoutubeVideoById(
-                      apiKey: apiKey,
-                      videoId: youtubeId,
-                      autoPlay: true,
-                      fullScreen: true,
-                    );
-                  }
-              ),
+              builder: (_) => AndroidYoutubePlayerScreen(src.first, onOpenYoutubeAppClicked: () {
+                FlutterYoutube.playYoutubeVideoById(
+                  apiKey: apiKey,
+                  videoId: youtubeId,
+                  autoPlay: true,
+                  fullScreen: true,
+                );
+              }),
               settings: null,
             ),
           );
@@ -401,8 +477,7 @@ class YoutubeVideoContentElement extends ReplacedElement {
   /// Converts fully qualified YouTube Url to video id.
   static String getYoutubeId(String url) {
     try {
-      if (url != null &&
-          (url.contains('youtube.com') || url.contains('youtu.be'))) {
+      if (url != null && (url.contains('youtube.com') || url.contains('youtu.be'))) {
         for (var exp in [
           RegExp(r"v=([_\-a-zA-Z0-9]{11}).*$"),
           RegExp(r"^embed\/([_\-a-zA-Z0-9]{11}).*$"),
@@ -466,7 +541,6 @@ class _AndroidYoutubePlayerWidgetState extends State<AndroidYoutubePlayerWidget>
   }
 }
 
-
 /// [SvgContentElement] is a [ReplacedElement] with an SVG as its contents.
 class SvgContentElement extends ReplacedElement {
   final String data;
@@ -522,15 +596,10 @@ class RubyElement extends ReplacedElement {
                   alignment: Alignment.bottomCenter,
                   child: Center(
                       child: Transform(
-                          transform:
-                              Matrix4.translationValues(0, -(rubyYPos), 0),
+                          transform: Matrix4.translationValues(0, -(rubyYPos), 0),
                           child: Text(c.innerHtml,
-                              style: context.style
-                                  .generateTextStyle()
-                                  .copyWith(fontSize: rubySize))))),
-              Container(
-                  child: Text(textNode.text.trim(),
-                      style: context.style.generateTextStyle())),
+                              style: context.style.generateTextStyle().copyWith(fontSize: rubySize))))),
+              Container(child: Text(textNode.text.trim(), style: context.style.generateTextStyle())),
             ],
           );
           widgets.add(widget);
@@ -547,10 +616,14 @@ class RubyElement extends ReplacedElement {
 }
 
 ReplacedElement parseReplacedElement(
-    dom.Element element, {
-      Map<String, String> headers,
-      Map<String, String> configs,
-  }) {
+  dom.Element element, {
+  Map<String, String> headers,
+  Map<String, dynamic> configs,
+}) {
+  bool isImageEnabled = (configs['image_enabled'] ?? true);
+  bool isPrefetchImageEnabled = (configs['prefetch_image_enabled'] ?? true);
+  BaseCacheManager cacheManager = configs['cache_manager'];
+
   switch (element.localName) {
     case "audio":
       final sources = <String>[
@@ -573,11 +646,11 @@ ReplacedElement parseReplacedElement(
       );
     case "iframe":
       var src = element.attributes['src'];
-      if(YoutubeVideoContentElement.isYoutubeUrl(src)) {
+      if (YoutubeVideoContentElement.isYoutubeUrl(src)) {
         return YoutubeVideoContentElement(
           name: "video",
           src: [src],
-          apiKey: configs['youtube_api_key']??'AIzaSyAyFhyWwa61XumcG8MEzSk1cf3qRcKDWIk',
+          apiKey: configs['youtube_api_key'].toString() ?? 'AIzaSyAyFhyWwa61XumcG8MEzSk1cf3qRcKDWIk',
           showControls: element.attributes['controls'] != null,
           loop: element.attributes['loop'] != null,
           autoplay: element.attributes['autoplay'] != null,
@@ -588,13 +661,13 @@ ReplacedElement parseReplacedElement(
         );
       } else {
         var giphyId = GiphyUtils.getId(src);
-        if(giphyId!=null && giphyId.isNotEmpty) {
-          return ImageContentElement(
-            name: "img",
-            src: GiphyUtils.buildGifUrlFromId(giphyId),
-            node: element,
-            headers: headers,
-          );
+        if (giphyId != null && giphyId.isNotEmpty) {
+          if (isImageEnabled) {
+            var src = GiphyUtils.buildGifUrlFromId(giphyId);
+            return buildImageElement(element, src, cacheManager, headers);
+          } else {
+            return EmptyContentElement(name: element.localName);
+          }
         }
 
         return IframeContentElement(
@@ -609,22 +682,17 @@ ReplacedElement parseReplacedElement(
     case "img":
       var src = element.attributes['src'];
 
-      var giphyId = GiphyUtils.getId(src);
-      if(giphyId!=null && giphyId.isNotEmpty) {
-        return ImageContentElement(
-          name: "img",
-          src: GiphyUtils.buildGifUrlFromId(giphyId),
-          node: element,
-          headers: headers,
-        );
+      if (isImageEnabled) {
+        var giphyId = GiphyUtils.getId(src);
+        if (giphyId != null && giphyId.isNotEmpty) {
+          var src = GiphyUtils.buildGifUrlFromId(giphyId);
+          return buildImageElement(element, src, cacheManager, headers);
+        } else {
+          var src = element.attributes['src'];
+          return buildImageElement(element, src, cacheManager, headers);
+        }
       } else {
-        return ImageContentElement(
-          name: "img",
-          src: element.attributes['src'],
-          alt: element.attributes['alt'],
-          node: element,
-          headers: headers,
-        );
+        return EmptyContentElement(name: element.localName);
       }
       break;
     case "video":
@@ -650,6 +718,7 @@ ReplacedElement parseReplacedElement(
         width: double.tryParse(element.attributes['width'] ?? ""),
         height: double.tryParse(element.attributes['height'] ?? ""),
       );
+      break;
     case "ruby":
       return RubyElement(
         element: element,
@@ -659,11 +728,34 @@ ReplacedElement parseReplacedElement(
   }
 }
 
+ReplacedElement buildImageElement(
+  dom.Element element,
+  String src,
+  BaseCacheManager cacheManager,
+  Map<String, String> headers,
+) {
+  return ImageContentElement(
+    name: "img",
+    src: src,
+    alt: element.attributes['alt'],
+    node: element,
+    headers: headers,
+    cacheManager: cacheManager,
+  );
+
+  // return CacheImageContentElement(
+  //   name: "img",
+  //   src: src,
+  //   alt: element.attributes['alt'],
+  //   node: element,
+  //   headers: headers,
+  //   cacheManager: cacheManager,
+  // );
+}
+
 // TODO(Sub6Resources): Remove when https://github.com/flutter/flutter/issues/36304 is resolved
-class PlatformViewVerticalGestureRecognizer
- extends VerticalDragGestureRecognizer {
-  PlatformViewVerticalGestureRecognizer({PointerDeviceKind kind})
-      : super(kind: kind);
+class PlatformViewVerticalGestureRecognizer extends VerticalDragGestureRecognizer {
+  PlatformViewVerticalGestureRecognizer({PointerDeviceKind kind}) : super(kind: kind);
 
   Offset _dragDistance = Offset.zero;
 

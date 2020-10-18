@@ -22,17 +22,21 @@ enum Gesture {
 }
 
 InteractableElement parseInteractableElement(
-    dom.Element element, List<StyledElement> children) {
+    dom.Element element,
+    List<StyledElement> children,  {
+      Style inlineStyle,
+    }) {
   InteractableElement interactableElement = InteractableElement(
     name: element.localName,
     children: children,
     node: element,
+    style: inlineStyle?.copyWith()??Style(),
   );
 
   switch (element.localName) {
     case "a":
       interactableElement.href = element.attributes['href'];
-      interactableElement.style = Style(
+      interactableElement.style = interactableElement.style.copyWith(
         color: Colors.blue,
         textDecoration: TextDecoration.underline,
       );

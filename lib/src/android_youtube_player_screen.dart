@@ -2,7 +2,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/src/html_elements.dart';
-import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
 
 class AndroidYoutubePlayerScreen extends StatefulWidget {
 

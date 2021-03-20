@@ -12,8 +12,8 @@ import 'package:flutter_html/src/android_youtube_player_screen.dart';
 import 'package:flutter_html/src/giphy_utils.dart';
 import 'package:flutter_html/src/utils.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:webview_media/webview_flutter.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart' as android_youtube;
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_youtube/flutter_youtube.dart';
 import 'package:video_player/video_player.dart';
 import 'package:flutter/material.dart';
@@ -593,12 +593,17 @@ class RubyElement extends ReplacedElement {
             alignment: Alignment.center,
             children: <Widget>[
               Container(
-                  alignment: Alignment.bottomCenter,
-                  child: Center(
-                      child: Transform(
-                          transform: Matrix4.translationValues(0, -(rubyYPos), 0),
-                          child: Text(c.innerHtml,
-                              style: context.style.generateTextStyle().copyWith(fontSize: rubySize))))),
+                alignment: Alignment.bottomCenter,
+                child: Center(
+                  child: Transform(
+                    transform: Matrix4.translationValues(0, -(rubyYPos), 0),
+                    child: Text(
+                      c.innerHtml,
+                      style: context.style.generateTextStyle().copyWith(fontSize: rubySize),
+                    ),
+                  ),
+                ),
+              ),
               Container(child: Text(textNode.text.trim(), style: context.style.generateTextStyle())),
             ],
           );

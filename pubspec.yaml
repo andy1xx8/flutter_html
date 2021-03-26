@@ -29,12 +29,9 @@ dependencies:
 
   # Plugins for rendering the <svg> tag.
   flutter_svg: ^0.21.0-nullsafety.0
-  #For iOS youtube player
-  flutter_youtube: 2.0.0
-  #For Android youtube player only
-  youtube_player_flutter:
-    path: /Volumes/Data/projects/open-source/youtube_player_flutter
+  flutter_youtube_view: ^2.0.0
   cached_network_image: ^3.0.0-nullsafety
+  webview_flutter: ^2.0.2
 
 dev_dependencies:
   flutter_test:

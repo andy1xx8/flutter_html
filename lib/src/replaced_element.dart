@@ -8,13 +8,11 @@ import 'package:chewie/chewie.dart';
 import 'package:chewie_audio/chewie_audio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter_html/src/android_youtube_player_screen.dart';
 import 'package:flutter_html/src/giphy_utils.dart';
 import 'package:flutter_html/src/utils.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart' as android_youtube;
+import 'package:flutter_youtube_view/flutter_youtube_view.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:flutter_youtube/flutter_youtube.dart';
 import 'package:video_player/video_player.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -269,7 +267,6 @@ class IframeContentElement extends ReplacedElement {
         initialUrl: src,
         javascriptMode: JavascriptMode.unrestricted,
         gestureRecognizers: {
-          //  Factory(() => PlatformViewVerticalGestureRecognizer()),
           Factory<VerticalDragGestureRecognizer>(() => VerticalDragGestureRecognizer()),
         },
       ),
@@ -393,64 +390,14 @@ class YoutubeVideoContentElement extends ReplacedElement {
   Widget toWidget(RenderContext context) {
     var youtubeId = getYoutubeId(src.first);
     final String thumbnail = getYoutubeThumbnailById(youtubeId);
-    return InkWell(
-      child: AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Container(
-//          width: width ?? (height ?? 150) * 2,
-          height: height ?? (width ?? 300) / 2,
-          child: Stack(
-            alignment: Alignment.center,
-            children: <Widget>[
-              thumbnail is String
-                  ? Image.network(
-                      thumbnail,
-                      fit: BoxFit.cover,
-                    )
-                  : SizedBox(),
-              Container(
-                width: 45,
-                height: 45,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color.fromRGBO(43, 43, 43, 0.6),
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.play_circle_outline,
-                    color: Colors.white,
-                    size: 30,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      onTap: () {
-        if (Platform.isAndroid) {
-          Navigator.of(context.buildContext).push(
-            MaterialPageRoute(
-              builder: (_) => AndroidYoutubePlayerScreen(src.first, onOpenYoutubeAppClicked: () {
-                FlutterYoutube.playYoutubeVideoById(
-                  apiKey: apiKey,
-                  videoId: youtubeId,
-                  autoPlay: true,
-                  fullScreen: true,
-                );
-              }),
-              settings: null,
-            ),
-          );
-        } else {
-          FlutterYoutube.playYoutubeVideoById(
-            apiKey: apiKey,
-            videoId: youtubeId,
-            autoPlay: true,
-            fullScreen: true,
-          );
-        }
-      },
+    return FlutterYoutubeView(
+      scaleMode: YoutubeScaleMode.fitWidth, // <option> fitWidth, fitHeight
+      params: YoutubeParam(
+        videoId: youtubeId,
+        showUI: false,
+        startSeconds: 0.0, // <option>
+        autoPlay: false,
+      ), // <option>
     );
   }
 
@@ -491,53 +438,6 @@ class YoutubeVideoContentElement extends ReplacedElement {
     } catch (ex) {
       return null;
     }
-  }
-}
-
-class AndroidYoutubePlayerWidget extends StatefulWidget {
-  final String videoId;
-
-  AndroidYoutubePlayerWidget(this.videoId);
-
-  @override
-  _AndroidYoutubePlayerWidgetState createState() => _AndroidYoutubePlayerWidgetState();
-}
-
-class _AndroidYoutubePlayerWidgetState extends State<AndroidYoutubePlayerWidget> {
-  android_youtube.YoutubePlayerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = android_youtube.YoutubePlayerController(
-      initialVideoId: widget.videoId,
-      flags: android_youtube.YoutubePlayerFlags(
-        autoPlay: false,
-        mute: false,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return android_youtube.YoutubePlayer(
-      controller: _controller,
-      showVideoProgressIndicator: true,
-      progressIndicatorColor: Colors.amber,
-      progressColors: android_youtube.ProgressBarColors(
-        playedColor: Colors.amber,
-        handleColor: Colors.amberAccent,
-      ),
-      onReady: () {
-        _controller.cue(widget.videoId);
-      },
-    );
   }
 }
 

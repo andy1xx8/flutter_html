@@ -1,3 +1,7 @@
+## [1.0.0-pre.1] - December 27, 2019
+
+* For a list of pre-release changes, including several BREAKING CHANGES, see [the pre-release changelog](https://github.com/Sub6Resources/flutter_html/blob/new-parser/PRE_CHANGELOG.md#100-pre1)
+
 ## [0.11.1] - December 14, 2019:
 
 * Add support for `AssetImage`s using the `asset:` prefix ([#162](https://github.com/Sub6Resources/flutter_html/pull/162)).
@@ -42,7 +46,6 @@
 * Add support for `address` tag in `RichText` parser.
 
 ## [0.9.7] - May 13, 2019:
-
 * Added onImageError callback
 * Added custom textstyle and edgeinsets callback ([#72](https://github.com/Sub6Resources/flutter_html/pull/72))
 * Update dependency versions ([#84](https://github.com/Sub6Resources/flutter_html/issues/84))

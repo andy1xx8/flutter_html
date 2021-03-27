@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_html/src/html_elements.dart';
 import 'package:flutter_html/style.dart';
 import 'package:html/dom.dart' as dom;
-//TODO(Sub6Resources) don't use the internal code of the html package as it may change unexpectedly.
+//TODO(Sub6Resources): don't use the internal code of the html package as it may change unexpectedly.
 import 'package:html/src/query_selector.dart';
-
-typedef ListCharacter = String Function(int i);
 
 /// A [StyledElement] applies a style to all of its children.
 class StyledElement {
@@ -14,31 +11,35 @@ class StyledElement {
   final List<String> elementClasses;
   List<StyledElement> children;
   Style style;
-  final dom.Node _node;
+  final dom.Node? _node;
 
   StyledElement({
     this.name = "[[No name]]",
-    this.elementId,
-    this.elementClasses,
-    this.children,
-    this.style,
-    dom.Element node,
+    this.elementId = "[[No ID]]",
+    this.elementClasses = const [],
+    required this.children,
+    required this.style,
+    required dom.Element? node,
   }) : this._node = node;
 
-  bool matchesSelector(String selector) => _node != null && matches(_node, selector);
+  bool matchesSelector(String selector) =>
+      _node != null && matches(_node as dom.Element, selector);
 
-  Map<String, String> get attributes => _node.attributes.map((key, value) {
-        return MapEntry(key, value);
-      });
+  Map<String, String> get attributes =>
+      _node?.attributes.map((key, value) {
+        return MapEntry(key.toString(), value);
+      }) ??
+      Map<String, String>();
 
-  dom.Element get element => _node;
+  dom.Element? get element => _node as dom.Element?;
 
   @override
   String toString() {
     String selfData =
-        "[$name] ${children?.length ?? 0} ${elementClasses?.isNotEmpty == true ? 'C:${elementClasses.toString()}' : ''}${elementId?.isNotEmpty == true ? 'ID: $elementId' : ''}";
-    children?.forEach((child) {
-      selfData += ("\n${child.toString()}").replaceAll(RegExp("^", multiLine: true), "-");
+        "[$name] ${children.length} ${elementClasses.isNotEmpty == true ? 'C:${elementClasses.toString()}' : ''}${elementId.isNotEmpty == true ? 'ID: $elementId' : ''}";
+    children.forEach((child) {
+      selfData += ("\n${child.toString()}")
+          .replaceAll(RegExp("^", multiLine: true), "-");
     });
     return selfData;
   }
@@ -50,7 +51,7 @@ StyledElement parseStyledElement(
   Style inlineStyle,
 }) {
   StyledElement styledElement = StyledElement(
-    name: element.localName,
+    name: element.localName!,
     elementId: element.id,
     elementClasses: element.classes.toList(),
     children: children,
@@ -89,6 +90,11 @@ StyledElement parseStyledElement(
           ((element.attributes["dir"] ?? "ltr") == "rtl") ? TextDirection.rtl : TextDirection.ltr;
       styledElement.style = styledElement.style.copyWith(
         textDirection: textDirection,
+          ((element.attributes["dir"] ?? "ltr") == "rtl")
+              ? TextDirection.rtl
+              : TextDirection.ltr;
+      styledElement.style = Style(
+        direction: textDirection,
       );
       break;
     case "big":
@@ -372,3 +378,6 @@ bool containsClazz(dom.Element element, String clazz) {
   } else
     return false;
 }
+
+typedef ListCharacter = String Function(int i);
+

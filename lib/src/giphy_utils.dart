@@ -8,11 +8,12 @@ class GiphyUtils {
     RegExp('^(https?://(www\\.)?)?giphy\\.com/embed/(?<id>\\w+)'),
   ];
 
-  static String getId(String url) {
+  static String? getId(String url) {
     return REGEX_LIST
         .where((regex) => regex.hasMatch(url))
         .map((regex) => regex.firstMatch(url))
-        .map((match) => match.namedGroup("id"))
+        .where((element) => element != null)
+        .map((match) => match?.namedGroup("id"))
         .firstWhere((element) => true, orElse: () => null);
   }
 

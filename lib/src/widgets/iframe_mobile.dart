@@ -15,6 +15,8 @@ class IframeContentElement extends ReplacedElement {
   final NavigationDelegate? navigationDelegate;
   final UniqueKey key = UniqueKey();
 
+  final Map<String, String>? headers;
+
   IframeContentElement({
     required String name,
     required this.src,
@@ -22,6 +24,7 @@ class IframeContentElement extends ReplacedElement {
     required this.height,
     required dom.Element node,
     required this.navigationDelegate,
+    this.headers,
   }) : super(name: name, style: Style(), node: node);
 
   @override

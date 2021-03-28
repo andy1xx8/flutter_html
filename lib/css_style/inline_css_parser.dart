@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_html/css_style/utils.dart';
 import 'package:flutter_html/style.dart';
 
@@ -6,7 +5,6 @@ class InlineCssParser {
   static Style parseCss(String style) {
     var rules = style.split(";").where((item) => item.trim().isNotEmpty);
     Style inlineStyle = Style();
-
 
     var isLink = false;
     var link = "";

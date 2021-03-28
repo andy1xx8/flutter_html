@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/html_parser.dart';
 import 'package:flutter_html/src/replaced_element.dart';
 import 'package:flutter_html/style.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:html/dom.dart' as dom;
+import 'package:webview_flutter/webview_flutter.dart';
 
 /// [IframeContentElement is a [ReplacedElement] with web content.
 class IframeContentElement extends ReplacedElement {
@@ -13,6 +13,8 @@ class IframeContentElement extends ReplacedElement {
   final NavigationDelegate? navigationDelegate;
   final UniqueKey key = UniqueKey();
 
+  final Map<String, String>? headers;
+
   IframeContentElement({
     required String name,
     required this.src,
@@ -20,6 +22,7 @@ class IframeContentElement extends ReplacedElement {
     required this.height,
     required dom.Element node,
     required this.navigationDelegate,
+    this.headers,
   }) : super(name: name, style: Style(), node: node);
 
   @override

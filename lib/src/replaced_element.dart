@@ -1,21 +1,23 @@
-import 'dart:convert';
 import 'dart:math';
 
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chewie/chewie.dart';
 import 'package:chewie_audio/chewie_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_html/html_parser.dart';
+import 'package:flutter_html/src/giphy_utils.dart';
 import 'package:flutter_html/src/html_elements.dart';
 import 'package:flutter_html/src/utils.dart';
+
+//Import correct support file for iframe base on platform.
 import 'package:flutter_html/src/widgets/iframe_unsupported.dart'
-  if (dart.library.io) 'package:flutter_html/src/widgets/iframe_mobile.dart'
-  if (dart.library.html) 'package:flutter_html/src/widgets/iframe_web.dart';
+    if (dart.library.io) 'package:flutter_html/src/widgets/iframe_mobile.dart'
+    if (dart.library.html) 'package:flutter_html/src/widgets/iframe_web.dart';
 import 'package:flutter_html/style.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_youtube_view/flutter_youtube_view.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:video_player/video_player.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -27,12 +29,12 @@ import 'package:webview_flutter/webview_flutter.dart';
 abstract class ReplacedElement extends StyledElement {
   PlaceholderAlignment alignment;
 
-  ReplacedElement({
-    required String name,
-    required Style style,
-    dom.Element? node,
-    this.alignment = PlaceholderAlignment.aboveBaseline
-  }) : super(name: name, children: [], style: style, node: node);
+  ReplacedElement(
+      {required String name,
+      required Style style,
+      dom.Element? node,
+      this.alignment = PlaceholderAlignment.aboveBaseline})
+      : super(name: name, children: [], style: style, node: node);
 
   static List<String?> parseMediaSources(List<dom.Element> elements) {
     return elements
@@ -81,7 +83,11 @@ class ImageContentElement extends ReplacedElement {
     required dom.Element node,
     this.headers,
     this.cacheManager,
-  }) : super(name: name, style: Style(), node: node, alignment: PlaceholderAlignment.middle);
+  }) : super(
+            name: name,
+            style: Style(),
+            node: node,
+            alignment: PlaceholderAlignment.middle);
 
   @override
   Widget toWidget(RenderContext context) {
@@ -91,9 +97,13 @@ class ImageContentElement extends ReplacedElement {
         return RawGestureDetector(
           child: widget,
           gestures: {
-            MultipleTapGestureRecognizer: GestureRecognizerFactoryWithHandlers<MultipleTapGestureRecognizer>(
-                  () => MultipleTapGestureRecognizer(), (instance) {
-                instance..onTap = () => context.parser.onImageTap?.call(src, context, attributes, element);
+            MultipleTapGestureRecognizer: GestureRecognizerFactoryWithHandlers<
+                MultipleTapGestureRecognizer>(
+              () => MultipleTapGestureRecognizer(),
+              (instance) {
+                instance
+                  ..onTap = () => context.parser.onImageTap
+                      ?.call(src, context, attributes, element);
               },
             ),
           },
@@ -127,7 +137,8 @@ class AudioContentElement extends ReplacedElement {
     return Container(
       width: context.style.width ?? 300,
       height: Theme.of(context.buildContext).platform == TargetPlatform.android
-          ? 48 : 75,
+          ? 48
+          : 75,
       child: ChewieAudio(
         controller: ChewieAudioController(
           videoPlayerController: VideoPlayerController.network(
@@ -205,41 +216,47 @@ class YoutubeVideoContentElement extends ReplacedElement {
   final bool autoplay;
   final bool loop;
   final bool muted;
-  final double width;
-  final double height;
+  final double? width;
+  final double? height;
 
   YoutubeVideoContentElement({
-    String name,
-    Style style,
-    this.src,
-    this.apiKey,
-    this.showControls,
-    this.autoplay,
-    this.loop,
-    this.muted,
+    required String name,
+    required Style style,
+    required this.src,
+    required this.apiKey,
+    this.showControls = false,
+    this.autoplay = false,
+    this.loop = false,
+    this.muted = false,
     this.width,
     this.height,
-    dom.Element node,
+    required dom.Element node,
   }) : super(name: name, style: style, node: node);
 
   @override
   Widget toWidget(RenderContext context) {
-    var youtubeId = getYoutubeId(src.first);
-    final String thumbnail = getYoutubeThumbnailById(youtubeId);
-    return FlutterYoutubeView(
-      scaleMode: YoutubeScaleMode.fitWidth, // <option> fitWidth, fitHeight
-      params: YoutubeParam(
-        videoId: youtubeId,
-        showUI: false,
-        startSeconds: 0.0, // <option>
-        autoPlay: false,
-      ), // <option>
+    var youtubeId = getYoutubeId(src.first) ?? '';
+    final String? thumbnail = getYoutubeThumbnailById(youtubeId);
+    final double _width = width ?? (height ?? 150) * 2;
+    final double _height = height ?? (width ?? 300) / 2;
+
+    return AspectRatio(
+      aspectRatio: _width / _height,
+      child: FlutterYoutubeView(
+        scaleMode: YoutubeScaleMode.fitWidth, // <option> fitWidth, fitHeight
+        params: YoutubeParam(
+          videoId: youtubeId,
+          showUI: false,
+          startSeconds: 0.0, // <option>
+          autoPlay: false,
+        ), // <option>
+      ),
     );
   }
 
-  static String getYoutubeThumbnail(String url) {
+  static String? getYoutubeThumbnail(String url) {
     try {
-      final String youtubeId = getYoutubeId(url);
+      final String? youtubeId = getYoutubeId(url);
       if (youtubeId == null || youtubeId.isEmpty) return null;
       return '$YT_THUMBNAIL_HOST$youtubeId$YT_THUMBNAIL_IMG';
     } catch (ex) {
@@ -249,7 +266,8 @@ class YoutubeVideoContentElement extends ReplacedElement {
 
   //youtubeId: id video yotuube
   // return url of thumbnail or null
-  static String getYoutubeThumbnailById(String youtubeId) {
+  static String? getYoutubeThumbnailById(String? youtubeId) {
+    if (youtubeId == null) return null;
     return '$YT_THUMBNAIL_HOST$youtubeId$YT_THUMBNAIL_IMG';
   }
 
@@ -258,15 +276,17 @@ class YoutubeVideoContentElement extends ReplacedElement {
   }
 
   /// Converts fully qualified YouTube Url to video id.
-  static String getYoutubeId(String url) {
+  static String? getYoutubeId(String url) {
     try {
-      if (url != null && (url.contains('youtube.com') || url.contains('youtu.be'))) {
-        for (var exp in [
+      if ((url.contains('youtube.com') || url.contains('youtu.be'))) {
+        final exp = [
           RegExp(r"v=([_\-a-zA-Z0-9]{11}).*$"),
           RegExp(r"^embed\/([_\-a-zA-Z0-9]{11}).*$"),
           RegExp(r"\/([_\-a-zA-Z0-9]{11}).*$")
-        ]) {
-          Match match = exp.firstMatch(url);
+        ];
+
+        for (var exp in exp) {
+          Match? match = exp.firstMatch(url);
           if (match != null && match.groupCount >= 1) return match.group(1);
         }
       }
@@ -302,7 +322,8 @@ class SvgContentElement extends ReplacedElement {
 }
 
 class EmptyContentElement extends ReplacedElement {
-  EmptyContentElement({String name = "empty"}) : super(name: name, style: Style());
+  EmptyContentElement({String name = "empty"})
+      : super(name: name, style: Style());
 
   @override
   Widget? toWidget(_) => null;
@@ -312,7 +333,8 @@ class RubyElement extends ReplacedElement {
   dom.Element element;
 
   RubyElement({required this.element, String name = "ruby"})
-      : super(name: name, alignment: PlaceholderAlignment.middle, style: Style());
+      : super(
+            name: name, alignment: PlaceholderAlignment.middle, style: Style());
 
   @override
   Widget toWidget(RenderContext context) {
@@ -366,7 +388,8 @@ class MathElement extends ReplacedElement {
     required this.element,
     this.texStr,
     String name = "math",
-  }) : super(name: name, alignment: PlaceholderAlignment.middle, style: Style());
+  }) : super(
+            name: name, alignment: PlaceholderAlignment.middle, style: Style());
 
   @override
   Widget toWidget(RenderContext context) {
@@ -379,13 +402,13 @@ class MathElement extends ReplacedElement {
           textStyle: context.style.generateTextStyle(),
           onErrorFallback: (FlutterMathException e) {
             if (context.parser.onMathError != null) {
-              return context.parser.onMathError!.call(texStr ?? '', e.message, e.messageWithType);
+              return context.parser.onMathError!
+                  .call(texStr ?? '', e.message, e.messageWithType);
             } else {
               return Text(e.message);
             }
           },
-        )
-    );
+        ));
   }
 
   String parseMathRecursive(dom.Node node, String parsed) {
@@ -398,13 +421,20 @@ class MathElement extends ReplacedElement {
       }
       // note: munder, mover, and munderover do not support placing braces and other
       // markings above/below elements, instead they are treated as super/subscripts for now.
-      if ((node.localName == "msup" || node.localName == "msub"
-          || node.localName == "munder" || node.localName == "mover") && nodeList.length == 2) {
+      if ((node.localName == "msup" ||
+              node.localName == "msub" ||
+              node.localName == "munder" ||
+              node.localName == "mover") &&
+          nodeList.length == 2) {
         parsed = parseMathRecursive(nodeList[0], parsed);
-        parsed = parseMathRecursive(nodeList[1],
-            parsed + "${node.localName == "msup" || node.localName == "mover" ? "^" : "_"}{") + "}";
+        parsed = parseMathRecursive(
+                nodeList[1],
+                parsed +
+                    "${node.localName == "msup" || node.localName == "mover" ? "^" : "_"}{") +
+            "}";
       }
-      if ((node.localName == "msubsup" || node.localName == "munderover") && nodeList.length == 3) {
+      if ((node.localName == "msubsup" || node.localName == "munderover") &&
+          nodeList.length == 3) {
         parsed = parseMathRecursive(nodeList[0], parsed);
         parsed = parseMathRecursive(nodeList[1], parsed + "_{") + "}";
         parsed = parseMathRecursive(nodeList[2], parsed + "^{") + "}";
@@ -425,11 +455,19 @@ class MathElement extends ReplacedElement {
         parsed = parseMathRecursive(nodeList[1], parsed + r"\sqrt[") + "]";
         parsed = parseMathRecursive(nodeList[0], parsed + "{") + "}";
       }
-      if (node.localName == "mi" || node.localName == "mn" || node.localName == "mo") {
+      if (node.localName == "mi" ||
+          node.localName == "mn" ||
+          node.localName == "mo") {
         if (mathML2Tex.keys.contains(node.text.trim())) {
-          parsed = parsed + mathML2Tex[mathML2Tex.keys.firstWhere((e) => e == node.text.trim())]!;
+          parsed = parsed +
+              mathML2Tex[
+                  mathML2Tex.keys.firstWhere((e) => e == node.text.trim())]!;
         } else if (node.text.startsWith("&") && node.text.endsWith(";")) {
-          parsed = parsed + node.text.trim().replaceFirst("&", r"\").substring(0, node.text.trim().length - 1);
+          parsed = parsed +
+              node.text
+                  .trim()
+                  .replaceFirst("&", r"\")
+                  .substring(0, node.text.trim().length - 1);
         } else {
           parsed = parsed + node.text.trim();
         }
@@ -440,13 +478,15 @@ class MathElement extends ReplacedElement {
 }
 
 ReplacedElement parseReplacedElement(
-  dom.Element element, {
-  Map<String, String> headers,
-  Map<String, dynamic> configs,
+  dom.Element element,
+  NavigationDelegate? navigationDelegateForIframe, {
+  Map<String, String>? headers,
+  Map<String, dynamic>? configs,
 }) {
-  bool isImageEnabled = (configs['image_enabled'] ?? true);
-  bool isPrefetchImageEnabled = (configs['prefetch_image_enabled'] ?? true);
-  BaseCacheManager cacheManager = configs['cache_manager'];
+  final bool isImageEnabled = configs?['image_enabled'] ?? true;
+  final bool isPrefetchImageEnabled =
+      (configs?['prefetch_image_enabled'] ?? true);
+  final BaseCacheManager? cacheManager = configs?['cache_manager'];
 
   switch (element.localName) {
     case "audio":
@@ -468,18 +508,19 @@ ReplacedElement parseReplacedElement(
       );
     case "br":
       return TextContentElement(
-        text: "\n",
-        style: Style(whiteSpace: WhiteSpace.PRE),
-        element: element,
-        node: element
-      );
+          text: "\n",
+          style: Style(whiteSpace: WhiteSpace.PRE),
+          element: element,
+          node: element);
     case "iframe":
-      var src = element.attributes['src'];
+      final src = element.attributes['src'] ?? '';
       if (YoutubeVideoContentElement.isYoutubeUrl(src)) {
         return YoutubeVideoContentElement(
           name: "video",
           src: [src],
-          apiKey: configs['youtube_api_key'].toString() ?? 'AIzaSyAyFhyWwa61XumcG8MEzSk1cf3qRcKDWIk',
+          style: Style(),
+          apiKey: configs?['youtube_api_key'].toString() ??
+              'AIzaSyAyFhyWwa61XumcG8MEzSk1cf3qRcKDWIk',
           showControls: element.attributes['controls'] != null,
           loop: element.attributes['loop'] != null,
           autoplay: element.attributes['autoplay'] != null,
@@ -489,13 +530,13 @@ ReplacedElement parseReplacedElement(
           node: element,
         );
       } else {
-        var giphyId = GiphyUtils.getId(src);
+        final giphyId = GiphyUtils.getId(src);
         if (giphyId != null && giphyId.isNotEmpty) {
           if (isImageEnabled) {
-            var src = GiphyUtils.buildGifUrlFromId(giphyId);
+            final src = GiphyUtils.buildGifUrlFromId(giphyId);
             return buildImageElement(element, src, cacheManager, headers);
           } else {
-            return EmptyContentElement(name: element.localName);
+            return EmptyContentElement(name: element.localName ?? 'Empty');
           }
         }
         return IframeContentElement(
@@ -508,23 +549,19 @@ ReplacedElement parseReplacedElement(
           headers: headers,
         );
       }
-      break;
     case "img":
-      var src = element.attributes['src'];
-
+      final src = element.attributes['src'] ?? '';
       if (isImageEnabled) {
-        var giphyId = GiphyUtils.getId(src);
+        final giphyId = GiphyUtils.getId(src);
         if (giphyId != null && giphyId.isNotEmpty) {
-          var src = GiphyUtils.buildGifUrlFromId(giphyId);
+          final src = GiphyUtils.buildGifUrlFromId(giphyId);
           return buildImageElement(element, src, cacheManager, headers);
         } else {
-          var src = element.attributes['src'];
           return buildImageElement(element, src, cacheManager, headers);
         }
       } else {
-        return EmptyContentElement(name: element.localName);
+        return EmptyContentElement(name: element.localName ?? 'Empty');
       }
-      break;
     case "video":
       final sources = <String?>[
         if (element.attributes['src'] != null) element.attributes['src'],
@@ -562,15 +599,16 @@ ReplacedElement parseReplacedElement(
         element: element,
       );
     default:
-      return EmptyContentElement(name: element.localName == null ? "[[No Name]]" : element.localName!);
+      return EmptyContentElement(
+          name: element.localName == null ? "[[No Name]]" : element.localName!);
   }
 }
 
 ReplacedElement buildImageElement(
   dom.Element element,
   String src,
-  BaseCacheManager cacheManager,
-  Map<String, String> headers,
+  BaseCacheManager? cacheManager,
+  Map<String, String>? headers,
 ) {
   return ImageContentElement(
     name: "img",
@@ -580,41 +618,4 @@ ReplacedElement buildImageElement(
     headers: headers,
     cacheManager: cacheManager,
   );
-}
-
-// TODO(Sub6Resources): Remove when https://github.com/flutter/flutter/issues/36304 is resolved
-class PlatformViewVerticalGestureRecognizer extends VerticalDragGestureRecognizer {
-  PlatformViewVerticalGestureRecognizer({PointerDeviceKind kind}) : super(kind: kind);
-
-  Offset _dragDistance = Offset.zero;
-
-  @override
-  void addPointer(PointerEvent event) {
-    startTrackingPointer(event.pointer);
-  }
-
-  @override
-  void handleEvent(PointerEvent event) {
-    _dragDistance = _dragDistance + event.delta;
-    if (event is PointerMoveEvent) {
-      final double dy = _dragDistance.dy.abs();
-      final double dx = _dragDistance.dx.abs();
-
-      if (dy > dx && dy > kTouchSlop) {
-        // vertical drag - accept
-        resolve(GestureDisposition.accepted);
-        _dragDistance = Offset.zero;
-      } else if (dx > kTouchSlop && dx > dy) {
-        // horizontal drag - stop tracking
-        stopTrackingPointer(event.pointer);
-        _dragDistance = Offset.zero;
-      }
-    }
-  }
-
-  @override
-  String get debugDescription => 'horizontal drag (platform view)';
-
-  @override
-  void didStopTrackingLastPointer(int pointer) {}
 }

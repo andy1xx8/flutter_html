@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/html_parser.dart';
 import 'package:flutter_html/image_render.dart';
 import 'package:flutter_html/style.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:html/dom.dart' as dom;
+import 'package:webview_flutter/webview_flutter.dart';
 
 class Html extends StatelessWidget {
   /// The `Html` widget takes HTML as input and displays a RichText
@@ -46,8 +46,10 @@ class Html extends StatelessWidget {
     this.blacklistedElements = const [],
     this.style = const {},
     this.navigationDelegateForIframe,
-  }) : document = null,
-        assert (data != null),
+    this.headers,
+    this.configs,
+  })  : document = null,
+        assert(data != null),
         super(key: key);
 
   Html.fromDom({
@@ -63,7 +65,9 @@ class Html extends StatelessWidget {
     this.blacklistedElements = const [],
     this.style = const {},
     this.navigationDelegateForIframe,
-  }) : data = null,
+    this.headers,
+    this.configs,
+  })  : data = null,
         assert(document != null),
         super(key: key);
 
@@ -71,7 +75,7 @@ class Html extends StatelessWidget {
   final String? data;
 
   /// The HTML data passed to the widget as a pre-processed [dom.Document]
-  final dom.Document? document;
+  final dom.Element? document;
 
   /// A function that defines what to do when a link is tapped
   final OnTap? onLinkTap;
@@ -87,12 +91,11 @@ class Html extends StatelessWidget {
   /// You can return a widget here to override the default error widget.
   final OnMathError? onMathError;
 
-
   /// A parameter that should be set when the HTML widget is expected to be
   /// flexible
   final bool shrinkWrap;
-  final Map<String, String> headers;
-  final Map<String, dynamic> configs;
+  final Map<String, String>? headers;
+  final Map<String, dynamic>? configs;
 
   /// A function that defines what to do when an image is tapped
   final OnTap? onImageTap;
@@ -114,7 +117,8 @@ class Html extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dom.Document doc = data != null ? HtmlParser.parseHTML(data!) : document!;
+    final dom.Element doc =
+        data != null ? HtmlParser.parseHTML(data!).documentElement! : document!;
     final double? width = shrinkWrap ? null : MediaQuery.of(context).size.width;
 
     return Container(

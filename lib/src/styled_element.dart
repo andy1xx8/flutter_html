@@ -24,8 +24,7 @@ class StyledElement {
     required dom.Element? node,
   }) : this._node = node;
 
-  bool matchesSelector(String selector) =>
-      _node != null && matches(_node as dom.Element, selector);
+  bool matchesSelector(String selector) => _node != null && matches(_node as dom.Element, selector);
 
   Map<String, String> get attributes =>
       _node?.attributes.map((key, value) {
@@ -40,8 +39,7 @@ class StyledElement {
     String selfData =
         "[$name] ${children.length} ${elementClasses.isNotEmpty == true ? 'C:${elementClasses.toString()}' : ''}${elementId.isNotEmpty == true ? 'ID: $elementId' : ''}";
     children.forEach((child) {
-      selfData += ("\n${child.toString()}")
-          .replaceAll(RegExp("^", multiLine: true), "-");
+      selfData += ("\n${child.toString()}").replaceAll(RegExp("^", multiLine: true), "-");
     });
     return selfData;
   }
@@ -73,16 +71,12 @@ StyledElement parseStyledElement(
       continue italics;
     case "article":
       styledElement.style = styledElement.style.copyWith(
-        display: containsClazz(element, 'inline')
-            ? Display.INLINE_BLOCK
-            : Display.BLOCK,
+        display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
       );
       break;
     case "aside":
       styledElement.style = styledElement.style.copyWith(
-        display: containsClazz(element, 'inline')
-            ? Display.INLINE_BLOCK
-            : Display.BLOCK,
+        display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
       );
       break;
     bold:
@@ -93,9 +87,7 @@ StyledElement parseStyledElement(
       break;
     case "bdo":
       final TextDirection textDirection =
-          ((element.attributes["dir"] ?? "ltr") == "rtl")
-              ? TextDirection.rtl
-              : TextDirection.ltr;
+          ((element.attributes["dir"] ?? "ltr") == "rtl") ? TextDirection.rtl : TextDirection.ltr;
 
       styledElement.style = styledElement.style.copyWith(
         direction: textDirection,
@@ -107,19 +99,15 @@ StyledElement parseStyledElement(
       );
       break;
     case "blockquote":
-      if ((element?.parent?.localName ?? '') == "blockquote") {
+      if ((element.parent?.localName ?? '') == "blockquote") {
         styledElement.style = styledElement.style.copyWith(
           margin: const EdgeInsets.symmetric(horizontal: 8.0),
-          display: containsClazz(element, 'inline')
-              ? Display.INLINE_BLOCK
-              : Display.BLOCK,
+          display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
         );
       } else {
         styledElement.style = styledElement.style.copyWith(
           margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-          display: containsClazz(element, 'inline')
-              ? Display.INLINE_BLOCK
-              : Display.BLOCK,
+          display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
         );
       }
       break;
@@ -160,9 +148,7 @@ StyledElement parseStyledElement(
     case "div":
       styledElement.style = styledElement.style.copyWith(
         margin: EdgeInsets.all(0),
-        display: containsClazz(element, 'bbCodeBlock')
-            ? Display.BLOCK
-            : Display.INLINE_BLOCK,
+        display: containsClazz(element, 'bbCodeBlock') ? Display.BLOCK : Display.INLINE_BLOCK,
         //  display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
       );
       if (children.isEmpty) return EmptyContentElement(name: '');
@@ -201,9 +187,7 @@ StyledElement parseStyledElement(
         fontSize: FontSize.xxLarge,
         fontWeight: FontWeight.bold,
         margin: EdgeInsets.symmetric(vertical: 18.67),
-        display: containsClazz(element, 'inline')
-            ? Display.INLINE_BLOCK
-            : Display.BLOCK,
+        display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
       );
       break;
     case "h2":
@@ -211,9 +195,7 @@ StyledElement parseStyledElement(
         fontSize: FontSize.xLarge,
         fontWeight: FontWeight.bold,
         margin: EdgeInsets.symmetric(vertical: 17.5),
-        display: containsClazz(element, 'inline')
-            ? Display.INLINE_BLOCK
-            : Display.BLOCK,
+        display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
       );
       break;
     case "h3":
@@ -221,9 +203,7 @@ StyledElement parseStyledElement(
         fontSize: FontSize(16.38),
         fontWeight: FontWeight.bold,
         margin: EdgeInsets.symmetric(vertical: 16.5),
-        display: containsClazz(element, 'inline')
-            ? Display.INLINE_BLOCK
-            : Display.BLOCK,
+        display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
       );
       break;
     case "h4":
@@ -231,9 +211,7 @@ StyledElement parseStyledElement(
         fontSize: FontSize.medium,
         fontWeight: FontWeight.bold,
         margin: EdgeInsets.symmetric(vertical: 18.5),
-        display: containsClazz(element, 'inline')
-            ? Display.INLINE_BLOCK
-            : Display.BLOCK,
+        display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
       );
       break;
     case "h5":
@@ -241,9 +219,7 @@ StyledElement parseStyledElement(
         fontSize: FontSize(11.62),
         fontWeight: FontWeight.bold,
         margin: EdgeInsets.symmetric(vertical: 19.25),
-        display: containsClazz(element, 'inline')
-            ? Display.INLINE_BLOCK
-            : Display.BLOCK,
+        display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
       );
       break;
     case "h6":
@@ -251,9 +227,7 @@ StyledElement parseStyledElement(
         fontSize: FontSize(9.38),
         fontWeight: FontWeight.bold,
         margin: EdgeInsets.symmetric(vertical: 22),
-        display: containsClazz(element, 'inline')
-            ? Display.INLINE_BLOCK
-            : Display.BLOCK,
+        display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
       );
       break;
     case "header":
@@ -287,6 +261,7 @@ StyledElement parseStyledElement(
     case "li":
       styledElement.style = styledElement.style.copyWith(
         display: Display.LIST_ITEM,
+        listStyleType: element.localName == "ol" ? ListStyleType.DECIMAL : ListStyleType.DISC,
       );
       break;
     case "main":
@@ -313,28 +288,22 @@ StyledElement parseStyledElement(
     case "ol":
     case "ul":
       //TODO(Sub6Resources): This is a workaround for collapsed margins. Remove.
-      if (element?.parent?.localName == "li") {
+      if (element.parent?.localName == "li") {
         styledElement.style = styledElement.style.copyWith(
           display: Display.BLOCK,
-          listStyleType: element.localName == "ol"
-              ? ListStyleType.DECIMAL
-              : ListStyleType.DISC,
+          listStyleType: element.localName == "ol" ? ListStyleType.DECIMAL : ListStyleType.DISC,
         );
       } else {
         styledElement.style = styledElement.style.copyWith(
           display: Display.BLOCK,
-          listStyleType: element.localName == "ol"
-              ? ListStyleType.DECIMAL
-              : ListStyleType.DISC,
+          listStyleType: element.localName == "ol" ? ListStyleType.DECIMAL : ListStyleType.DISC,
         );
       }
       break;
     case "p":
       styledElement.style = styledElement.style.copyWith(
         margin: EdgeInsets.symmetric(vertical: 14.0),
-        display: containsClazz(element, 'inline')
-            ? Display.INLINE_BLOCK
-            : Display.BLOCK,
+        display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
       );
       break;
     case "pre":
@@ -342,9 +311,7 @@ StyledElement parseStyledElement(
         fontFamily: 'monospace',
         margin: EdgeInsets.symmetric(vertical: 14.0),
         whiteSpace: WhiteSpace.PRE,
-        display: containsClazz(element, 'inline')
-            ? Display.INLINE_BLOCK
-            : Display.BLOCK,
+        display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
       );
       break;
     case "q":
@@ -359,9 +326,7 @@ StyledElement parseStyledElement(
       continue monospace;
     case "section":
       styledElement.style = styledElement.style.copyWith(
-        display: containsClazz(element, 'inline')
-            ? Display.INLINE_BLOCK
-            : Display.BLOCK,
+        display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
       );
       break;
     case "small":

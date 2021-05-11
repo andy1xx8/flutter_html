@@ -98,6 +98,29 @@ class CustomBorderSide {
 
 String getRandString(int len) {
   var random = Random.secure();
-  var values = List<int>.generate(len, (i) =>  random.nextInt(255));
+  var values = List<int>.generate(len, (i) => random.nextInt(255));
   return base64UrlEncode(values);
+}
+
+Size calcSize(BuildContext context, double w, double h, double ratio) {
+  final Size screenSize = MediaQuery.of(context).size;
+  double? screenWidth;
+  double? screenHeight;
+
+  if (!screenSize.isEmpty && screenSize.isFinite) {
+    screenWidth = screenSize.width;
+    screenHeight = screenSize.height;
+  }
+
+  if (screenWidth != null && w > screenWidth) {
+    w = screenWidth;
+    h = w / ratio;
+  }
+
+  if (screenHeight != null && h > screenHeight) {
+    w = screenHeight * ratio;
+    h = screenHeight;
+  }
+
+  return new Size(w, h);
 }

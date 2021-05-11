@@ -272,7 +272,7 @@ class _MyHomePageState extends State<MyHomePage> {
             }
           },
           customImageRenders: {
-            networkSourceMatcher(domains: ["flutter.dev"]): (context, attributes, element) {
+            networkSourceMatcher(domains: ["flutter.dev"]): (context, attributes, element, cacheManager) {
               return FlutterLogo(size: 36);
             },
             networkSourceMatcher(domains: ["mydomain.com"]): networkImageRender(
@@ -281,9 +281,8 @@ class _MyHomePageState extends State<MyHomePage> {
               loadingWidget: () => Text("Loading..."),
             ),
             // On relative paths starting with /wiki, prefix with a base url
-                (attr, _) => attr["src"] != null && attr["src"]!.startsWith("/wiki"):
-            networkImageRender(
-                mapUrl: (url) => "https://upload.wikimedia.org" + url!),
+            (attr, _) => attr["src"] != null && attr["src"]!.startsWith("/wiki"):
+                networkImageRender(mapUrl: (url) => "https://upload.wikimedia.org" + url!),
             // Custom placeholder image for broken links
             networkSourceMatcher(): networkImageRender(altWidget: (_) => FlutterLogo()),
           },

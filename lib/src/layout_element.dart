@@ -38,7 +38,14 @@ class TableLayoutElement extends LayoutElement {
       ),
       width: style.width,
       height: style.height,
-      child: LayoutBuilder(builder: (_, constraints) => _layoutCells(context, constraints)),
+      child: LayoutBuilder(builder: (_, constraints) {
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          primary: false,
+          physics: ClampingScrollPhysics(),
+          child: _layoutCells(context, constraints),
+        );
+      }),
     );
   }
 
@@ -59,16 +66,13 @@ class TableLayoutElement extends LayoutElement {
                     // In a horizontally unbounded container; always wrap content instead of applying flex
                     return IntrinsicContentTrackSize();
                   }
-                  final percentageSize = double.tryParse(
-                      colWidth.substring(0, colWidth.length - 1));
+                  final percentageSize = double.tryParse(colWidth.substring(0, colWidth.length - 1));
                   return percentageSize != null && !percentageSize.isNaN
                       ? FlexibleTrackSize(percentageSize * 0.01)
                       : IntrinsicContentTrackSize();
                 } else if (colWidth != null) {
                   final fixedPxSize = double.tryParse(colWidth);
-                  return fixedPxSize != null
-                      ? FixedTrackSize(fixedPxSize)
-                      : IntrinsicContentTrackSize();
+                  return fixedPxSize != null ? FixedTrackSize(fixedPxSize) : IntrinsicContentTrackSize();
                 } else {
                   return IntrinsicContentTrackSize();
                 }
@@ -84,14 +88,11 @@ class TableLayoutElement extends LayoutElement {
     }
 
     // All table rows have a height intrinsic to their (spanned) contents
-    final rowSizes =
-        List.generate(rows.length, (_) => IntrinsicContentTrackSize());
+    final rowSizes = List.generate(rows.length, (_) => IntrinsicContentTrackSize());
 
     // Calculate column bounds
     int columnMax = rows
-        .map((row) => row.children
-            .whereType<TableCellElement>()
-            .fold(0, (int value, child) => value + child.colspan))
+        .map((row) => row.children.whereType<TableCellElement>().fold(0, (int value, child) => value + child.colspan))
         .fold(0, max);
 
     // Place the cells in the rows/columns
@@ -116,9 +117,7 @@ class TableLayoutElement extends LayoutElement {
               ),
               child: SizedBox.expand(
                 child: Container(
-                  alignment: child.style.alignment ??
-                      style.alignment ??
-                      Alignment.centerLeft,
+                  alignment: child.style.alignment ?? style.alignment ?? Alignment.centerLeft,
                   child: StyledText(
                     textSpan: context.parser.parseTree(context, child),
                     style: child.style,
@@ -141,9 +140,7 @@ class TableLayoutElement extends LayoutElement {
 
     // Create column tracks (insofar there were no colgroups that already defined them)
     List<TrackSize> finalColumnSizes = columnSizes.take(columnMax).toList();
-    finalColumnSizes += List.generate(
-        max(0, columnMax - finalColumnSizes.length),
-        (_) => IntrinsicContentTrackSize());
+    finalColumnSizes += List.generate(max(0, columnMax - finalColumnSizes.length), (_) => IntrinsicContentTrackSize());
 
     return LayoutGrid(
       gridFit: GridFit.loose,
@@ -192,7 +189,13 @@ class TableCellElement extends StyledElement {
     required List<StyledElement> children,
     required Style style,
     required dom.Element node,
-  }) : super(name: name, elementId: elementId, elementClasses: elementClasses, children: children, style: style, node: node) {
+  }) : super(
+            name: name,
+            elementId: elementId,
+            elementClasses: elementClasses,
+            children: children,
+            style: style,
+            node: node) {
     colspan = _parseSpan(this, "colspan");
     rowspan = _parseSpan(this, "rowspan");
   }
@@ -280,25 +283,26 @@ class DetailsContentElement extends LayoutElement {
     InlineSpan? firstChild = childrenList.isNotEmpty == true ? childrenList.first : null;
     return ExpansionTile(
         expandedAlignment: Alignment.centerLeft,
-        title: elementList.isNotEmpty == true && elementList.first.localName == "summary" ? StyledText(
-          textSpan: TextSpan(
-            style: style.generateTextStyle(),
-            children: firstChild == null ? [] : [firstChild],
-          ),
-          style: style,
-          renderContext: context,
-        ) : Text("Details"),
+        title: elementList.isNotEmpty == true && elementList.first.localName == "summary"
+            ? StyledText(
+                textSpan: TextSpan(
+                  style: style.generateTextStyle(),
+                  children: firstChild == null ? [] : [firstChild],
+                ),
+                style: style,
+                renderContext: context,
+              )
+            : Text("Details"),
         children: [
           StyledText(
             textSpan: TextSpan(
-              style: style.generateTextStyle(),
-              children: getChildren(childrenList, context, elementList.isNotEmpty == true && elementList.first.localName == "summary" ? firstChild : null)
-            ),
+                style: style.generateTextStyle(),
+                children: getChildren(childrenList, context,
+                    elementList.isNotEmpty == true && elementList.first.localName == "summary" ? firstChild : null)),
             style: style,
             renderContext: context,
           ),
-        ]
-    );
+        ]);
   }
 
   List<InlineSpan> getChildren(List<InlineSpan> children, RenderContext context, InlineSpan? firstChild) {
@@ -315,8 +319,8 @@ class EmptyLayoutElement extends LayoutElement {
 }
 
 LayoutElement parseLayoutElement(
-    dom.Element element,
-    List<StyledElement> children,
+  dom.Element element,
+  List<StyledElement> children,
 ) {
   switch (element.localName) {
     case "details":
@@ -324,11 +328,7 @@ LayoutElement parseLayoutElement(
         return EmptyLayoutElement(name: "empty");
       }
       return DetailsContentElement(
-          node: element,
-          name: element.localName!,
-          children: children,
-          elementList: element.children
-      );
+          node: element, name: element.localName!, children: children, elementList: element.children);
     case "table":
       return TableLayoutElement(
         name: element.localName!,
@@ -349,10 +349,6 @@ LayoutElement parseLayoutElement(
         node: element,
       );
     default:
-      return TableLayoutElement(
-          children: children,
-          name: "[[No Name]]",
-          node: element
-      );
+      return TableLayoutElement(children: children, name: "[[No Name]]", node: element);
   }
 }

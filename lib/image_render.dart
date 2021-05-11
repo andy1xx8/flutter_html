@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_html/html_parser.dart';
+import 'package:flutter_html/src/utils.dart' as utils;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:html/dom.dart' as dom;
 
@@ -38,18 +41,18 @@ ImageSourceMatcher networkSourceMatcher({
       }
     };
 
-ImageSourceMatcher assetUriMatcher() => (attributes, element) =>
-    _src(attributes) != null && _src(attributes)!.startsWith("asset:");
+ImageSourceMatcher assetUriMatcher() =>
+    (attributes, element) => _src(attributes) != null && _src(attributes)!.startsWith("asset:");
 
 typedef ImageRender = Widget? Function(
   RenderContext context,
   Map<String, String> attributes,
   dom.Element? element,
+  BaseCacheManager? cacheManager,
 );
 
-ImageRender base64ImageRender() => (context, attributes, element) {
-      final decodedImage =
-          base64.decode(_src(attributes)!.split("base64,")[1].trim());
+ImageRender base64ImageRender() => (context, attributes, element, cacheManager) {
+      final decodedImage = base64.decode(_src(attributes)!.split("base64,")[1].trim());
       precacheImage(
         MemoryImage(decodedImage),
         context.buildContext,
@@ -59,6 +62,7 @@ ImageRender base64ImageRender() => (context, attributes, element) {
       );
       return Image.memory(
         decodedImage,
+        fit: BoxFit.scaleDown,
         frameBuilder: (ctx, child, frame, _) {
           if (frame == null) {
             return Text(_alt(attributes) ?? "", style: context.style.generateTextStyle());
@@ -72,13 +76,14 @@ ImageRender assetImageRender({
   double? width,
   double? height,
 }) =>
-    (context, attributes, element) {
+    (context, attributes, element, cacheManager) {
       final assetPath = _src(attributes)!.replaceFirst('asset:', '');
       if (_src(attributes)!.endsWith(".svg")) {
         return SvgPicture.asset(assetPath);
       } else {
         return Image.asset(
           assetPath,
+          fit: BoxFit.scaleDown,
           width: width ?? _width(attributes),
           height: height ?? _height(attributes),
           frameBuilder: (ctx, child, frame, _) {
@@ -99,7 +104,7 @@ ImageRender networkImageRender({
   Widget Function(String?)? altWidget,
   Widget Function()? loadingWidget,
 }) =>
-    (context, attributes, element) {
+    (context, attributes, element, cacheManager) {
       final src = mapUrl?.call(_src(attributes)) ?? _src(attributes)!;
       precacheImage(
         NetworkImage(
@@ -112,16 +117,20 @@ ImageRender networkImageRender({
         },
       );
       Completer<Size> completer = Completer();
-      Image image = Image.network(src, frameBuilder: (ctx, child, frame, _) {
-        if (frame == null) {
-          if (!completer.isCompleted) {
-            completer.completeError("error");
+      Image image = Image(
+        image: CachedNetworkImageProvider(src, cacheManager: cacheManager, headers: headers),
+        filterQuality: FilterQuality.low,
+        frameBuilder: (ctx, child, frame, _) {
+          if (frame == null) {
+            if (!completer.isCompleted) {
+              completer.completeError("error");
+            }
+            return child;
+          } else {
+            return child;
           }
-          return child;
-        } else {
-          return child;
-        }
-      });
+        },
+      );
 
       image.image.resolve(ImageConfiguration()).addListener(
             ImageStreamListener((ImageInfo image, bool synchronousCall) {
@@ -136,15 +145,21 @@ ImageRender networkImageRender({
               }
             }),
           );
+
       return FutureBuilder<Size>(
         future: completer.future,
         builder: (BuildContext buildContext, AsyncSnapshot<Size> snapshot) {
           if (snapshot.hasData) {
-            return Image.network(
-              src,
-              headers: headers,
-              width: width ?? _width(attributes) ?? snapshot.data!.width,
-              height: height ?? _height(attributes),
+            final w = width ?? _width(attributes) ?? snapshot.data!.width;
+            final h = height ?? _height(attributes) ?? snapshot.data!.height;
+            final size = utils.calcSize(buildContext, w, h, snapshot.data!.aspectRatio);
+
+            return Image(
+              image: CachedNetworkImageProvider(src, cacheManager: cacheManager, headers: headers),
+              filterQuality: FilterQuality.low,
+              fit: BoxFit.scaleDown,
+              width: size.width,
+              height: size.height,
               frameBuilder: (ctx, child, frame, _) {
                 if (frame == null) {
                   return altWidget?.call(_alt(attributes)) ??
@@ -157,13 +172,13 @@ ImageRender networkImageRender({
             return altWidget?.call(_alt(attributes)) ??
                 Text(_alt(attributes) ?? "", style: context.style.generateTextStyle());
           } else {
-            return loadingWidget?.call() ?? const CircularProgressIndicator();
+            return loadingWidget?.call() ?? const SizedBox();
           }
         },
       );
     };
 
-ImageRender svgDataImageRender() => (context, attributes, element) {
+ImageRender svgDataImageRender() => (context, attributes, element, cacheManager) {
       final dataUri = _dataUriFormat.firstMatch(_src(attributes)!);
       final data = dataUri?.namedGroup('data');
       if (data == null) return null;
@@ -171,6 +186,7 @@ ImageRender svgDataImageRender() => (context, attributes, element) {
         final decodedImage = base64.decode(data.trim());
         return SvgPicture.memory(
           decodedImage,
+          fit: BoxFit.contain,
           width: _width(attributes),
           height: _height(attributes),
         );
@@ -178,9 +194,10 @@ ImageRender svgDataImageRender() => (context, attributes, element) {
       return SvgPicture.string(Uri.decodeFull(data));
     };
 
-ImageRender svgNetworkImageRender() => (context, attributes, element) {
+ImageRender svgNetworkImageRender() => (context, attributes, element, cacheManager) {
       return SvgPicture.network(
         attributes["src"]!,
+        fit: BoxFit.contain,
         width: _width(attributes),
         height: _height(attributes),
       );

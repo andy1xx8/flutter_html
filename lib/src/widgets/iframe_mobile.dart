@@ -36,13 +36,12 @@ class IframeContentElement extends ReplacedElement {
       child: WebView(
         initialUrl: src,
         key: key,
-        javascriptMode: sandboxMode == null || sandboxMode == "allow-scripts"
-            ? JavascriptMode.unrestricted
-            : JavascriptMode.disabled,
+        // javascriptMode: sandboxMode == null || sandboxMode == "allow-scripts"
+        //     ? JavascriptMode.unrestricted
+        //     : JavascriptMode.disabled,
+        javascriptMode: JavascriptMode.unrestricted,
         navigationDelegate: navigationDelegate,
-        gestureRecognizers: {
-          Factory<VerticalDragGestureRecognizer>(() => VerticalDragGestureRecognizer())
-        },
+        gestureRecognizers: {Factory<VerticalDragGestureRecognizer>(() => VerticalDragGestureRecognizer())},
       ),
     );
   }

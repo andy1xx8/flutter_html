@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_html/html_parser.dart';
+import 'package:flutter_html/src/anchor.dart';
 import 'package:flutter_html/src/html_elements.dart';
 import 'package:flutter_html/src/styled_element.dart';
 import 'package:flutter_html/style.dart';
@@ -14,8 +15,9 @@ abstract class LayoutElement extends StyledElement {
   LayoutElement({
     String name = "[[No Name]]",
     required List<StyledElement> children,
+    String? elementId,
     dom.Element? node,
-  }) : super(name: name, children: children, style: Style(), node: node);
+  }) : super(name: name, children: children, style: Style(), node: node, elementId: elementId ?? "[[No ID]]");
 
   Widget? toWidget(RenderContext context);
 }
@@ -25,11 +27,12 @@ class TableLayoutElement extends LayoutElement {
     required String name,
     required List<StyledElement> children,
     required dom.Element node,
-  }) : super(name: name, children: children, node: node);
+  }) : super(name: name, children: children, node: node, elementId: node.id);
 
   @override
   Widget toWidget(RenderContext context) {
     return Container(
+      key: AnchorKey.of(context.parser.key, this),
       margin: style.margin,
       padding: style.padding,
       decoration: BoxDecoration(
@@ -97,11 +100,14 @@ class TableLayoutElement extends LayoutElement {
 
     // Place the cells in the rows/columns
     final cells = <GridPlacement>[];
-    final columnRowOffset = List.generate(columnMax + 1, (_) => 0);
+    final columnRowOffset = List.generate(columnMax, (_) => 0);
     int rowi = 0;
     for (var row in rows) {
       int columni = 0;
       for (var child in row.children) {
+        if (columni > columnMax - 1 ) {
+          break;
+        }
         while (columnRowOffset[columni] > 0) {
           columnRowOffset[columni] = columnRowOffset[columni] - 1;
           columni++;
@@ -127,13 +133,17 @@ class TableLayoutElement extends LayoutElement {
               ),
             ),
             columnStart: columni,
-            columnSpan: child.colspan,
+            columnSpan: min(child.colspan, columnMax - columni),
             rowStart: rowi,
-            rowSpan: child.rowspan,
+            rowSpan: min(child.rowspan, rows.length - rowi),
           ));
           columnRowOffset[columni] = child.rowspan - 1;
           columni += child.colspan;
         }
+      }
+      while (columni < columnRowOffset.length) {
+        columnRowOffset[columni] = columnRowOffset[columni] - 1;
+        columni++;
       }
       rowi++;
     }
@@ -266,7 +276,7 @@ class DetailsContentElement extends LayoutElement {
     required List<StyledElement> children,
     required dom.Element node,
     required this.elementList,
-  }) : super(name: name, node: node, children: children);
+  }) : super(name: name, node: node, children: children, elementId: node.id);
 
   @override
   Widget toWidget(RenderContext context) {
@@ -282,6 +292,7 @@ class DetailsContentElement extends LayoutElement {
     }
     InlineSpan? firstChild = childrenList.isNotEmpty == true ? childrenList.first : null;
     return ExpansionTile(
+        key: AnchorKey.of(context.parser.key, this),
         expandedAlignment: Alignment.centerLeft,
         title: elementList.isNotEmpty == true && elementList.first.localName == "summary"
             ? StyledText(

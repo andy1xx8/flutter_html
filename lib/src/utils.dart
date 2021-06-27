@@ -48,40 +48,21 @@ class Context<T> {
 
 // This class is a workaround so that both an image
 // and a link can detect taps at the same time.
-class MultipleTapGestureRecognizer extends TapGestureRecognizer {
-  bool _ready = false;
+class MultipleTapGestureDetector extends InheritedWidget {
+  final void Function()? onTap;
 
-  @override
-  void addAllowedPointer(PointerDownEvent event) {
-    if (state == GestureRecognizerState.ready) {
-      _ready = true;
-    }
-    super.addAllowedPointer(event);
+  const MultipleTapGestureDetector({
+    Key? key,
+    required Widget child,
+    required this.onTap,
+  }) : super(key: key, child: child);
+
+  static MultipleTapGestureDetector? of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<MultipleTapGestureDetector>();
   }
 
   @override
-  void handlePrimaryPointer(PointerEvent event) {
-    if (event is PointerCancelEvent) {
-      _ready = false;
-    }
-    super.handlePrimaryPointer(event);
-  }
-
-  @override
-  void resolve(GestureDisposition disposition) {
-    if (_ready && disposition == GestureDisposition.rejected) {
-      _ready = false;
-    }
-    super.resolve(disposition);
-  }
-
-  @override
-  void rejectGesture(int pointer) {
-    if (_ready) {
-      acceptGesture(pointer);
-      _ready = false;
-    }
-  }
+  bool updateShouldNotify(MultipleTapGestureDetector oldWidget) => false;
 }
 
 class CustomBorderSide {

@@ -13,11 +13,8 @@ class InteractableElement extends StyledElement {
     required Style style,
     required this.href,
     required dom.Node node,
-  }) : super(
-            name: name,
-            children: children,
-            style: style,
-            node: node as dom.Element?);
+    required String elementId,
+  }) : super(name: name, children: children, style: style, node: node as dom.Element?, elementId: elementId);
 }
 
 /// A [Gesture] indicates the type of interaction by a user.
@@ -33,24 +30,24 @@ InteractableElement parseInteractableElement(
   switch (element.localName) {
     case "a":
       return InteractableElement(
-        name: element.localName!,
-        children: children,
-        href: element.attributes['href'],
-        style: (inlineStyle?.copyWith() ?? Style()).copyWith(
-          color: Colors.blue,
-          textDecoration: TextDecoration.underline,
-        ),
-        node: element,
-      );
+          name: element.localName!,
+          children: children,
+          href: element.attributes['href'],
+          style: (inlineStyle?.copyWith() ?? Style()).copyWith(
+            color: Colors.blue,
+            textDecoration: TextDecoration.underline,
+          ),
+          node: element,
+          elementId: element.id);
 
     /// will never be called, just to suppress missing return warning
     default:
       return InteractableElement(
-        name: element.localName!,
-        children: children,
-        node: element,
-        href: '',
-        style: inlineStyle?.copyWith() ?? Style(),
-      );
+          name: element.localName!,
+          children: children,
+          node: element,
+          href: '',
+          style: inlineStyle?.copyWith() ?? Style(),
+          elementId: "[[No ID]]");
   }
 }

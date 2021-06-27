@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_html/image_render.dart';
-import 'package:flutter_html/src/layout_element.dart';
-import 'package:flutter_html/style.dart';
 
 void main() => runApp(new MyApp());
 
@@ -30,6 +27,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 const htmlData = r"""
+<p id='top'><a href='#bottom'>Scroll to bottom</a></p>
       <h1>Header 1</h1>
       <h2>Header 2</h2>
       <h3>Header 3</h3>
@@ -44,6 +42,8 @@ const htmlData = r"""
         </ruby>
         &nbsp;is Japanese Kanji.
       </p>
+      <h3>Support for maxLines:</h3>
+      <h5>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec vestibulum sapien feugiat lorem tempor, id porta orci elementum. Fusce sed justo id arcu egestas congue. Fusce tincidunt lacus ipsum, in imperdiet felis ultricies eu. In ullamcorper risus felis, ac maximus dui bibendum vel. Integer ligula tortor, facilisis eu mauris ut, ultrices hendrerit ex. Donec scelerisque massa consequat, eleifend mauris eu, mollis dui. Donec placerat augue tortor, et tincidunt quam tempus non. Quisque sagittis enim nisi, eu condimentum lacus egestas ac. Nam facilisis luctus ipsum, at aliquam urna fermentum a. Quisque tortor dui, faucibus in ante eget, pellentesque mattis nibh. In augue dolor, euismod vitae eleifend nec, tempus vel urna. Donec vitae augue accumsan ligula fringilla ultrices et vel ex.</h5>
       <h3>Support for <code>sub</code>/<code>sup</code></h3>
       Solve for <var>x<sub>n</sub></var>: log<sub>2</sub>(<var>x</var><sup>2</sup>+<var>n</var>) = 9<sup>3</sup>
       <p>One of the most <span>common</span> equations in all of physics is <br /><var>E</var>=<var>m</var><var>c</var><sup>2</sup>.</p>
@@ -84,7 +84,7 @@ const htmlData = r"""
       <h3>Custom Element Support (inline: <bird></bird> and as block):</h3>
       <flutter></flutter>
       <flutter horizontal></flutter>
-      <h3>SVG support:</h3>
+      <h3 id='middle'>SVG support:</h3>
       <svg id='svg1' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
             <circle r="32" cx="35" cy="65" fill="#F00" opacity="0.5"/>
             <circle r="32" cx="65" cy="65" fill="#0F0" opacity="0.5"/>
@@ -102,9 +102,11 @@ const htmlData = r"""
             <li>a</li>
             <li>nested</li>
             <li>unordered
-            <ol>
+            <ol style="list-style-type: lower-alpha;" start="5">
             <li>With a nested</li>
-            <li>ordered list.</li>
+            <li>ordered list</li>
+            <li>with a lower alpha list style</li>
+            <li>starting at letter e</li>
             </ol>
             </li>
             <li>list</li>
@@ -234,6 +236,7 @@ const htmlData = r"""
       </math>
       <h3>Tex Support with the custom tex tag:</h3>
       <tex>i\hbar\frac{\partial}{\partial t}\Psi(\vec x,t) = -\frac{\hbar}{2m}\nabla^2\Psi(\vec x,t)+ V(\vec x)\Psi(\vec x,t)</tex>
+      <p id='bottom'><a href='#top'>Scroll to top</a></p>
 """;
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -262,29 +265,48 @@ class _MyHomePageState extends State<MyHomePage> {
               padding: EdgeInsets.all(6),
               alignment: Alignment.topLeft,
             ),
+            'h5': Style(maxLines: 2, textOverflow: TextOverflow.ellipsis),
           },
           customRender: {
             "table": (context, child) {
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: (context.tree as TableLayoutElement).toWidget(context),
+                child:
+                    (context.tree as TableLayoutElement).toWidget(context),
               );
-            }
+            },
+            "bird": (RenderContext context, Widget child) {
+              return TextSpan(text: "🐦");
+            },
+            "flutter": (RenderContext context, Widget child) {
+              return FlutterLogo(
+                style: (context.tree.element!.attributes['horizontal'] != null)
+                    ? FlutterLogoStyle.horizontal
+                    : FlutterLogoStyle.markOnly,
+                textColor: context.style.color!,
+                size: context.style.fontSize!.size! * 5,
+              );
+            },
           },
           customImageRenders: {
-            networkSourceMatcher(domains: ["flutter.dev"]): (context, attributes, element, cacheManager) {
+            networkSourceMatcher(domains: ["flutter.dev"]):
+                (context, attributes, element, cacheManager) {
               return FlutterLogo(size: 36);
             },
-            networkSourceMatcher(domains: ["mydomain.com"]): networkImageRender(
+            networkSourceMatcher(domains: ["mydomain.com"]):
+                networkImageRender(
               headers: {"Custom-Header": "some-value"},
               altWidget: (alt) => Text(alt ?? ""),
               loadingWidget: () => Text("Loading..."),
             ),
             // On relative paths starting with /wiki, prefix with a base url
-            (attr, _) => attr["src"] != null && attr["src"]!.startsWith("/wiki"):
-                networkImageRender(mapUrl: (url) => "https://upload.wikimedia.org" + url!),
+            (attr, _) =>
+                    attr["src"] != null && attr["src"]!.startsWith("/wiki"):
+                networkImageRender(
+                    mapUrl: (url) => "https://upload.wikimedia.org" + url!),
             // Custom placeholder image for broken links
-            networkSourceMatcher(): networkImageRender(altWidget: (_) => FlutterLogo()),
+            networkSourceMatcher():
+                networkImageRender(altWidget: (_) => FlutterLogo()),
           },
           onLinkTap: (url, _, __, ___) {
             print("Opening $url...");
@@ -294,6 +316,13 @@ class _MyHomePageState extends State<MyHomePage> {
           },
           onImageError: (exception, stackTrace) {
             print(exception);
+          },
+          onCssParseError: (css, messages) {
+            print("css that errored: $css");
+            print("error messages:");
+            messages.forEach((element) {
+              print(element);
+            });
           },
         ),
       ),

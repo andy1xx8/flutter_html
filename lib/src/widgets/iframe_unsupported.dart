@@ -23,7 +23,7 @@ class IframeContentElement extends ReplacedElement {
     required dom.Element node,
     required this.navigationDelegate,
     this.headers,
-  }) : super(name: name, style: Style(), node: node);
+  }) : super(name: name, style: Style(), node: node, elementId: node.id);
 
   @override
   Widget toWidget(RenderContext context) {

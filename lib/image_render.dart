@@ -7,6 +7,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_html/html_parser.dart';
 import 'package:flutter_html/src/utils.dart' as utils;
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_svg/parser.dart';
 import 'package:html/dom.dart' as dom;
 
 typedef ImageSourceMatcher = bool Function(
@@ -62,7 +63,6 @@ ImageRender base64ImageRender() => (context, attributes, element, cacheManager) 
       );
       return Image.memory(
         decodedImage,
-        fit: BoxFit.scaleDown,
         frameBuilder: (ctx, child, frame, _) {
           if (frame == null) {
             return Text(_alt(attributes) ?? "", style: context.style.generateTextStyle());
@@ -79,11 +79,13 @@ ImageRender assetImageRender({
     (context, attributes, element, cacheManager) {
       final assetPath = _src(attributes)!.replaceFirst('asset:', '');
       if (_src(attributes)!.endsWith(".svg")) {
-        return SvgPicture.asset(assetPath);
+        return SvgPicture.asset(
+          assetPath,
+          width: width ?? _width(attributes),
+          height: height ?? _height(attributes));
       } else {
         return Image.asset(
           assetPath,
-          fit: BoxFit.scaleDown,
           width: width ?? _width(attributes),
           height: height ?? _height(attributes),
           frameBuilder: (ctx, child, frame, _) {
@@ -145,7 +147,6 @@ ImageRender networkImageRender({
               }
             }),
           );
-
       return FutureBuilder<Size>(
         future: completer.future,
         builder: (BuildContext buildContext, AsyncSnapshot<Size> snapshot) {
@@ -197,7 +198,6 @@ ImageRender svgDataImageRender() => (context, attributes, element, cacheManager)
 ImageRender svgNetworkImageRender() => (context, attributes, element, cacheManager) {
       return SvgPicture.network(
         attributes["src"]!,
-        fit: BoxFit.contain,
         width: _width(attributes),
         height: _height(attributes),
       );
@@ -227,4 +227,15 @@ double? _height(Map<String, String> attributes) {
 double? _width(Map<String, String> attributes) {
   final widthString = attributes["width"];
   return widthString == null ? widthString as double? : double.tryParse(widthString);
+}
+
+double _aspectRatio(Map<String, String> attributes, AsyncSnapshot<Size> calculated) {
+  final heightString = attributes["height"];
+  final widthString = attributes["width"];
+  if (heightString != null && widthString != null) {
+    final height = double.tryParse(heightString);
+    final width = double.tryParse(widthString);
+    return height == null || width == null ? calculated.data!.aspectRatio : width / height;
+  }
+  return calculated.data!.aspectRatio;
 }

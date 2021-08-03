@@ -12,12 +12,14 @@ import 'package:webview_flutter/webview_flutter.dart';
 //export render context api
 export 'package:flutter_html/html_parser.dart';
 export 'package:flutter_html/image_render.dart';
+
 //export src for advanced custom render uses (e.g. casting context.tree)
 export 'package:flutter_html/src/anchor.dart';
 export 'package:flutter_html/src/interactable_element.dart';
 export 'package:flutter_html/src/layout_element.dart';
 export 'package:flutter_html/src/replaced_element.dart';
 export 'package:flutter_html/src/styled_element.dart';
+
 //export style api
 export 'package:flutter_html/style.dart';
 
@@ -156,8 +158,7 @@ class Html extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dom.Element doc =
-        data != null ? HtmlParser.parseHTML(data!).documentElement! : document!;
+    final dom.Element doc = data != null ? HtmlParser.parseHTML(data!).documentElement! : document!;
     final double? width = shrinkWrap ? null : MediaQuery.of(context).size.width;
 
     return Container(
@@ -175,9 +176,7 @@ class Html extends StatelessWidget {
         selectable: false,
         style: style,
         customRender: customRender,
-        imageRenders: {}
-          ..addAll(customImageRenders)
-          ..addAll(defaultImageRenders),
+        imageRenders: {}..addAll(customImageRenders)..addAll(defaultImageRenders),
         tagsList: tagsList.isEmpty ? Html.tags : tagsList,
         navigationDelegateForIframe: navigationDelegateForIframe,
         headers: headers,
@@ -219,28 +218,32 @@ class SelectableHtml extends StatelessWidget {
   /// (e.g. bold or italic), while container related styling (e.g. borders or padding/margin)
   /// do not work because we can't use the `ContainerSpan` class (it needs an enclosing `WidgetSpan`).
 
-  SelectableHtml({
-    Key? key,
-    required this.data,
-    this.onLinkTap,
-    this.onAnchorTap,
-    this.onCssParseError,
-    this.shrinkWrap = false,
-    this.style = const {},
-    this.tagsList = const [],
-  }) : document = null,
+  SelectableHtml(
+      {Key? key,
+      required this.data,
+      this.onLinkTap,
+      this.onAnchorTap,
+      this.onCssParseError,
+      this.shrinkWrap = false,
+      this.style = const {},
+      this.tagsList = const [],
+      this.headers = const {},
+      this.configs = const {}})
+      : document = null,
         super(key: key);
 
-  SelectableHtml.fromDom({
-    Key? key,
-    required this.document,
-    this.onLinkTap,
-    this.onAnchorTap,
-    this.onCssParseError,
-    this.shrinkWrap = false,
-    this.style = const {},
-    this.tagsList = const [],
-  }) : data = null,
+  SelectableHtml.fromDom(
+      {Key? key,
+      required this.document,
+      this.onLinkTap,
+      this.onAnchorTap,
+      this.onCssParseError,
+      this.shrinkWrap = false,
+      this.style = const {},
+      this.tagsList = const [],
+      this.headers = const {},
+      this.configs = const {}})
+      : data = null,
         super(key: key);
 
   /// The HTML data passed to the widget as a String
@@ -269,6 +272,9 @@ class SelectableHtml extends StatelessWidget {
   /// An API that allows you to override the default style for any HTML element
   final Map<String, Style> style;
 
+  final Map<String, String>? headers;
+  final Map<String, dynamic>? configs;
+
   static List<String> get tags => new List<String>.from(SELECTABLE_ELEMENTS);
 
   @override
@@ -294,6 +300,8 @@ class SelectableHtml extends StatelessWidget {
         imageRenders: defaultImageRenders,
         tagsList: tagsList.isEmpty ? SelectableHtml.tags : tagsList,
         navigationDelegateForIframe: null,
+        headers: headers,
+        configs: configs,
       ),
     );
   }

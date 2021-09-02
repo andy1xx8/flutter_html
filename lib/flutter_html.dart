@@ -220,6 +220,7 @@ class SelectableHtml extends StatelessWidget {
     this.shrinkWrap = false,
     this.style = const {},
     this.tagsList = const [],
+    this.selectionControls
   }) : document = null,
         assert(data != null),
         _anchorKey = anchorKey ?? GlobalKey(),
@@ -235,6 +236,7 @@ class SelectableHtml extends StatelessWidget {
     this.shrinkWrap = false,
     this.style = const {},
     this.tagsList = const [],
+    this.selectionControls
   }) : data = null,
         assert(document != null),
         _anchorKey = anchorKey ?? GlobalKey(),
@@ -269,6 +271,10 @@ class SelectableHtml extends StatelessWidget {
   /// An API that allows you to override the default style for any HTML element
   final Map<String, Style> style;
 
+  /// Custom Selection controls allows you to override default toolbar and build custom toolbar
+  /// options
+  final TextSelectionControls? selectionControls;
+
   static List<String> get tags => new List<String>.from(SELECTABLE_ELEMENTS);
 
   @override
@@ -294,6 +300,7 @@ class SelectableHtml extends StatelessWidget {
         imageRenders: defaultImageRenders,
         tagsList: tagsList.isEmpty ? SelectableHtml.tags : tagsList,
         navigationDelegateForIframe: null,
+        selectionControls: selectionControls,
       ),
     );
   }

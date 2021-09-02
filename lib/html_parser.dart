@@ -59,6 +59,7 @@ class HtmlParser extends StatelessWidget {
   final List<String> tagsList;
   final NavigationDelegate? navigationDelegateForIframe;
   final OnTap? _onAnchorTap;
+  final TextSelectionControls? selectionControls;
 
   HtmlParser({
     required this.key,
@@ -76,6 +77,7 @@ class HtmlParser extends StatelessWidget {
     required this.imageRenders,
     required this.tagsList,
     required this.navigationDelegateForIframe,
+    this.selectionControls
   })  : this._onAnchorTap = onAnchorTap != null
           ? onAnchorTap
           : key != null
@@ -126,6 +128,7 @@ class HtmlParser extends StatelessWidget {
           tree: cleanedTree,
           style: cleanedTree.style,
         ),
+        selectionControls: selectionControls,
       );
     }
     return StyledText(
@@ -259,9 +262,11 @@ class HtmlParser extends StatelessWidget {
 
   static StyledElement _applyExternalCss(Map<String, Map<String, List<css.Expression>>> declarations, StyledElement tree) {
     declarations.forEach((key, style) {
-      if (tree.matchesSelector(key)) {
-        tree.style = tree.style.merge(declarationsToStyle(style));
-      }
+      try {
+        if (tree.matchesSelector(key)) {
+          tree.style = tree.style.merge(declarationsToStyle(style));
+        }
+      } catch (_) {}
     });
 
     tree.children.forEach((e) => _applyExternalCss(declarations, e));
@@ -1057,6 +1062,7 @@ class StyledText extends StatelessWidget {
   final RenderContext renderContext;
   final AnchorKey? key;
   final bool _selectable;
+  final TextSelectionControls? selectionControls;
 
   const StyledText({
     required this.textSpan,
@@ -1064,6 +1070,7 @@ class StyledText extends StatelessWidget {
     this.textScaleFactor = 1.0,
     required this.renderContext,
     this.key,
+    this.selectionControls,
   }) : _selectable = false,
         super(key: key);
 
@@ -1073,6 +1080,7 @@ class StyledText extends StatelessWidget {
     this.textScaleFactor = 1.0,
     required this.renderContext,
     this.key,
+    this.selectionControls
   }) : textSpan = textSpan,
         _selectable = true,
         super(key: key);
@@ -1087,6 +1095,7 @@ class StyledText extends StatelessWidget {
         textDirection: style.direction,
         textScaleFactor: textScaleFactor,
         maxLines: style.maxLines,
+        selectionControls: selectionControls,
       );
     }
     return SizedBox(

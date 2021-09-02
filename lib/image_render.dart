@@ -8,16 +8,16 @@ import 'package:flutter_svg/parser.dart';
 import 'package:html/dom.dart' as dom;
 
 typedef ImageSourceMatcher = bool Function(
-    Map<String, String> attributes,
-    dom.Element? element,
-    );
+  Map<String, String> attributes,
+  dom.Element? element,
+);
 
 final _dataUriFormat = RegExp(
     "^(?<scheme>data):(?<mime>image\/[\\w\+\-\.]+)(?<encoding>;base64)?\,(?<data>.*)");
 
 ImageSourceMatcher dataUriMatcher(
-    {String? encoding = 'base64', String? mime}) =>
-        (attributes, element) {
+        {String? encoding = 'base64', String? mime}) =>
+    (attributes, element) {
       if (_src(attributes) == null) return false;
       final dataUri = _dataUriFormat.firstMatch(_src(attributes)!);
       return dataUri != null &&
@@ -30,7 +30,7 @@ ImageSourceMatcher networkSourceMatcher({
   List<String>? domains,
   String? extension,
 }) =>
-        (attributes, element) {
+    (attributes, element) {
       if (_src(attributes) == null) return false;
       try {
         final src = Uri.parse(_src(attributes)!);
@@ -43,41 +43,41 @@ ImageSourceMatcher networkSourceMatcher({
     };
 
 ImageSourceMatcher assetUriMatcher() => (attributes, element) =>
-_src(attributes) != null && _src(attributes)!.startsWith("asset:");
+    _src(attributes) != null && _src(attributes)!.startsWith("asset:");
 
 typedef ImageRender = Widget? Function(
-    RenderContext context,
-    Map<String, String> attributes,
-    dom.Element? element,
-    );
+  RenderContext context,
+  Map<String, String> attributes,
+  dom.Element? element,
+);
 
 ImageRender base64ImageRender() => (context, attributes, element) {
-  final decodedImage =
-  base64.decode(_src(attributes)!.split("base64,")[1].trim());
-  precacheImage(
-    MemoryImage(decodedImage),
-    context.buildContext,
-    onError: (exception, StackTrace? stackTrace) {
-      context.parser.onImageError?.call(exception, stackTrace);
-    },
-  );
-  return Image.memory(
-    decodedImage,
-    frameBuilder: (ctx, child, frame, _) {
-      if (frame == null) {
-        return Text(_alt(attributes) ?? "",
-            style: context.style.generateTextStyle());
-      }
-      return child;
-    },
-  );
-};
+      final decodedImage =
+          base64.decode(_src(attributes)!.split("base64,")[1].trim());
+      precacheImage(
+        MemoryImage(decodedImage),
+        context.buildContext,
+        onError: (exception, StackTrace? stackTrace) {
+          context.parser.onImageError?.call(exception, stackTrace);
+        },
+      );
+      return Image.memory(
+        decodedImage,
+        frameBuilder: (ctx, child, frame, _) {
+          if (frame == null) {
+            return Text(_alt(attributes) ?? "",
+                style: context.style.generateTextStyle());
+          }
+          return child;
+        },
+      );
+    };
 
 ImageRender assetImageRender({
   double? width,
   double? height,
 }) =>
-        (context, attributes, element) {
+    (context, attributes, element) {
       final assetPath = _src(attributes)!.replaceFirst('asset:', '');
       if (_src(attributes)!.endsWith(".svg")) {
         return SvgPicture.asset(assetPath,
@@ -107,7 +107,7 @@ ImageRender networkImageRender({
   Widget Function(String?)? altWidget,
   Widget Function()? loadingWidget,
 }) =>
-        (context, attributes, element) {
+    (context, attributes, element) {
       final src = mapUrl?.call(_src(attributes)) ?? _src(attributes)!;
       precacheImage(
         NetworkImage(
@@ -132,7 +132,7 @@ ImageRender networkImageRender({
       });
 
       var listener =
-      ImageStreamListener((ImageInfo image, bool synchronousCall) {
+          ImageStreamListener((ImageInfo image, bool synchronousCall) {
         var myImage = image.image;
         Size size = Size(myImage.width.toDouble(), myImage.height.toDouble());
         if (!completer.isCompleted) {
@@ -156,8 +156,8 @@ ImageRender networkImageRender({
               constraints: BoxConstraints(
                   maxWidth: width ?? _width(attributes) ?? snapshot.data!.width,
                   maxHeight:
-                  (width ?? _width(attributes) ?? snapshot.data!.width) /
-                      _aspectRatio(attributes, snapshot)),
+                      (width ?? _width(attributes) ?? snapshot.data!.width) /
+                          _aspectRatio(attributes, snapshot)),
               child: AspectRatio(
                 aspectRatio: _aspectRatio(attributes, snapshot),
                 child: Image.network(
@@ -188,27 +188,27 @@ ImageRender networkImageRender({
     };
 
 ImageRender svgDataImageRender() => (context, attributes, element) {
-  final dataUri = _dataUriFormat.firstMatch(_src(attributes)!);
-  final data = dataUri?.namedGroup('data');
-  if (data == null) return null;
-  if (dataUri?.namedGroup('encoding') == ';base64') {
-    final decodedImage = base64.decode(data.trim());
-    return SvgPicture.memory(
-      decodedImage,
-      width: _width(attributes),
-      height: _height(attributes),
-    );
-  }
-  return SvgPicture.string(Uri.decodeFull(data));
-};
+      final dataUri = _dataUriFormat.firstMatch(_src(attributes)!);
+      final data = dataUri?.namedGroup('data');
+      if (data == null) return null;
+      if (dataUri?.namedGroup('encoding') == ';base64') {
+        final decodedImage = base64.decode(data.trim());
+        return SvgPicture.memory(
+          decodedImage,
+          width: _width(attributes),
+          height: _height(attributes),
+        );
+      }
+      return SvgPicture.string(Uri.decodeFull(data));
+    };
 
 ImageRender svgNetworkImageRender() => (context, attributes, element) {
-  return SvgPicture.network(
-    attributes["src"]!,
-    width: _width(attributes),
-    height: _height(attributes),
-  );
-};
+      return SvgPicture.network(
+        attributes["src"]!,
+        width: _width(attributes),
+        height: _height(attributes),
+      );
+    };
 
 final Map<ImageSourceMatcher, ImageRender> defaultImageRenders = {
   dataUriMatcher(mime: 'image/svg+xml', encoding: null): svgDataImageRender(),

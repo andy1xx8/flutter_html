@@ -173,7 +173,7 @@ class Html extends StatelessWidget {
         selectable: false,
         style: style,
         customRender: customRender,
-        imageRenders: {}..addAll(customImageRenders)..addAll(defaultImageRenders),
+        imageRenders: customImageRenders.isNotEmpty? customImageRenders: defaultImageRenders,
         tagsList: tagsList.isEmpty ? Html.tags : tagsList,
         navigationDelegateForIframe: navigationDelegateForIframe,
         configs: configs,

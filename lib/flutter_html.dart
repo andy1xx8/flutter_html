@@ -218,33 +218,38 @@ class SelectableHtml extends StatelessWidget {
   /// (e.g. bold or italic), while container related styling (e.g. borders or padding/margin)
   /// do not work because we can't use the `ContainerSpan` class (it needs an enclosing `WidgetSpan`).
 
-  SelectableHtml(
-      {Key? key,
-      required this.data,
-      this.onLinkTap,
-      this.onAnchorTap,
-      this.onCssParseError,
-      this.shrinkWrap = false,
-      this.style = const {},
-      this.tagsList = const [],
-      this.headers = const {},
-      this.configs = const {}})
-      : document = null,
+  SelectableHtml({
+    Key? key,
+    GlobalKey? anchorKey,
+    required this.data,
+    this.onLinkTap,
+    this.onAnchorTap,
+    this.onCssParseError,
+    this.shrinkWrap = false,
+    this.style = const {},
+    this.tagsList = const [],
+  }) : document = null,
+        assert(data != null),
+        _anchorKey = anchorKey ?? GlobalKey(),
         super(key: key);
 
-  SelectableHtml.fromDom(
-      {Key? key,
-      required this.document,
-      this.onLinkTap,
-      this.onAnchorTap,
-      this.onCssParseError,
-      this.shrinkWrap = false,
-      this.style = const {},
-      this.tagsList = const [],
-      this.headers = const {},
-      this.configs = const {}})
-      : data = null,
+  SelectableHtml.fromDom({
+    Key? key,
+    GlobalKey? anchorKey,
+    required this.document,
+    this.onLinkTap,
+    this.onAnchorTap,
+    this.onCssParseError,
+    this.shrinkWrap = false,
+    this.style = const {},
+    this.tagsList = const [],
+  }) : data = null,
+        assert(document != null),
+        _anchorKey = anchorKey ?? GlobalKey(),
         super(key: key);
+
+  /// A unique key for this Html widget to ensure uniqueness of anchors
+  final GlobalKey _anchorKey;
 
   /// The HTML data passed to the widget as a String
   final String? data;
@@ -272,9 +277,6 @@ class SelectableHtml extends StatelessWidget {
   /// An API that allows you to override the default style for any HTML element
   final Map<String, Style> style;
 
-  final Map<String, String>? headers;
-  final Map<String, dynamic>? configs;
-
   static List<String> get tags => new List<String>.from(SELECTABLE_ELEMENTS);
 
   @override
@@ -285,7 +287,7 @@ class SelectableHtml extends StatelessWidget {
     return Container(
       width: width,
       child: HtmlParser(
-        key: null,
+        key: _anchorKey,
         htmlData: doc,
         onLinkTap: onLinkTap,
         onAnchorTap: onAnchorTap,
@@ -300,8 +302,6 @@ class SelectableHtml extends StatelessWidget {
         imageRenders: defaultImageRenders,
         tagsList: tagsList.isEmpty ? SelectableHtml.tags : tagsList,
         navigationDelegateForIframe: null,
-        headers: headers,
-        configs: configs,
       ),
     );
   }

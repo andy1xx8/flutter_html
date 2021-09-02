@@ -86,6 +86,7 @@ ImageRender assetImageRender({
       } else {
         return Image.asset(
           assetPath,
+          filterQuality: FilterQuality.medium,
           width: width ?? _width(attributes),
           height: height ?? _height(attributes),
           frameBuilder: (ctx, child, frame, _) {

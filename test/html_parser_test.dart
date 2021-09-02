@@ -19,13 +19,10 @@ void main() {
     );
   });
 
-  testNewParser();
 }
 
-void testNewParser() {
-  test("Html Parser works correctly", () {
-    HtmlParser.parseHTML("<b>Hello, World!</b>");
-  });
+void testNewParser(BuildContext context) {
+  HtmlParser.parseHTML("<b>Hello, World!</b>");
 
   test("lexDomTree works correctly", () {
     StyledElement tree = HtmlParser.lexDomTree(
@@ -35,6 +32,7 @@ void testNewParser() {
       [],
       [],
       null,
+      context,
     );
     print(tree.toString());
   });
@@ -46,7 +44,8 @@ void testNewParser() {
             .documentElement!,
         [],
         [],
-        null);
+        null, context,
+    );
     print(tree.toString());
   });
 
@@ -57,6 +56,7 @@ void testNewParser() {
       [],
       [],
       null,
+      context,
     );
     print(tree.toString());
   });
@@ -69,69 +69,64 @@ void testNewParser() {
       [],
       [],
       null,
+      context,
     );
     print(tree.toString());
   });
 
-  test("Video Content Source Parser works correctly", () {
-    ReplacedElement videoContentElement = parseReplacedElement(
-      HtmlParser.parseHTML("""
+  ReplacedElement videoContentElement = parseReplacedElement(
+    HtmlParser.parseHTML("""
       <video width="320" height="240" controls>
        <source src="movie.mp4" type="video/mp4">
        <source src="movie.ogg" type="video/ogg">
        Your browser does not support the video tag.
       </video>
     """).getElementsByTagName("video")[0],
-      null,
-    );
+    null,
+  );
 
-    expect(videoContentElement, isA<VideoContentElement>());
-    if (videoContentElement is VideoContentElement) {
-      expect(videoContentElement.showControls, equals(true),
-          reason: "Controls isn't working");
-      expect(videoContentElement.src, hasLength(2),
-          reason: "Not enough sources...");
-    }
-  });
+  expect(videoContentElement, isA<VideoContentElement>());
+  if (videoContentElement is VideoContentElement) {
+    expect(videoContentElement.showControls, equals(true),
+        reason: "Controls isn't working");
+    expect(videoContentElement.src, hasLength(2),
+        reason: "Not enough sources...");
+  }
 
-  test("Audio Content Source Parser works correctly", () {
-    ReplacedElement audioContentElement = parseReplacedElement(
-      HtmlParser.parseHTML("""
+  ReplacedElement audioContentElement = parseReplacedElement(
+    HtmlParser.parseHTML("""
       <audio controls>
         <source src='audio.mp3' type='audio/mpeg'>
         <source src='audio.wav' type='audio/wav'>
         Your browser does not support the audio tag.
       </audio>
     """).getElementsByTagName("audio")[0],
-      null,
-    );
-    expect(audioContentElement, isA<AudioContentElement>());
-    if (audioContentElement is AudioContentElement) {
-      expect(audioContentElement.showControls, equals(true),
-          reason: "Controls isn't working");
-      expect(audioContentElement.src, hasLength(2),
-          reason: "Not enough sources...");
-    }
-  });
+    null,
+  );
+  expect(audioContentElement, isA<AudioContentElement>());
+  if (audioContentElement is AudioContentElement) {
+    expect(audioContentElement.showControls, equals(true),
+        reason: "Controls isn't working");
+    expect(audioContentElement.src, hasLength(2),
+        reason: "Not enough sources...");
+  }
 
-  test("Test style merging", () {
-    Style style1 = Style(
-      display: Display.BLOCK,
-      fontWeight: FontWeight.bold,
-    );
+  Style style1 = Style(
+    display: Display.BLOCK,
+    fontWeight: FontWeight.bold,
+  );
 
-    Style style2 = Style(
-      before: "* ",
-      direction: TextDirection.rtl,
-      fontStyle: FontStyle.italic,
-    );
+  Style style2 = Style(
+    before: "* ",
+    direction: TextDirection.rtl,
+    fontStyle: FontStyle.italic,
+  );
 
-    Style finalStyle = style1.merge(style2);
+  Style finalStyle = style1.merge(style2);
 
-    expect(finalStyle.display, equals(Display.BLOCK));
-    expect(finalStyle.before, equals("* "));
-    expect(finalStyle.direction, equals(TextDirection.rtl));
-    expect(finalStyle.fontStyle, equals(FontStyle.italic));
-    expect(finalStyle.fontWeight, equals(FontWeight.bold));
-  });
+  expect(finalStyle.display, equals(Display.BLOCK));
+  expect(finalStyle.before, equals("* "));
+  expect(finalStyle.direction, equals(TextDirection.rtl));
+  expect(finalStyle.fontStyle, equals(FontStyle.italic));
+  expect(finalStyle.fontWeight, equals(FontWeight.bold));
 }

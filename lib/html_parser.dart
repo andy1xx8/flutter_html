@@ -95,6 +95,7 @@ class HtmlParser extends StatelessWidget {
       customRender.keys.toList(),
       tagsList,
       navigationDelegateForIframe,
+      context,
       headers: this.headers,
       configs: this.configs,
     );
@@ -111,7 +112,7 @@ class HtmlParser extends StatelessWidget {
         buildContext: context,
         parser: this,
         tree: cleanedTree,
-        style: Style.fromTextStyle(Theme.of(context).textTheme.bodyText2!),
+              style: Style.fromTextStyle(Theme.of(context).textTheme.bodyText2!),
       ),
       cleanedTree,
     );
@@ -129,7 +130,7 @@ class HtmlParser extends StatelessWidget {
           buildContext: context,
           parser: this,
           tree: cleanedTree,
-          style: Style.fromTextStyle(Theme.of(context).textTheme.bodyText2!),
+          style: cleanedTree.style,
         ),
       );
     }
@@ -141,7 +142,7 @@ class HtmlParser extends StatelessWidget {
         buildContext: context,
         parser: this,
         tree: cleanedTree,
-        style: Style.fromTextStyle(Theme.of(context).textTheme.bodyText2!),
+        style: cleanedTree.style,
       ),
     );
   }
@@ -161,7 +162,7 @@ class HtmlParser extends StatelessWidget {
     dom.Element html,
     List<String> customRenderTags,
     List<String> tagsList,
-    NavigationDelegate? navigationDelegateForIframe, {
+    NavigationDelegate? navigationDelegateForIframe,    BuildContext context, {
     Map<String, String>? headers,
     Map<String, dynamic>? configs,
   }) {
@@ -282,14 +283,14 @@ class HtmlParser extends StatelessWidget {
   }
 
   static StyledElement _applyInlineStyles(StyledElement tree, OnCssParseError? errorHandler) {
-    if (tree.attributes.containsKey("style")) {
-      final newStyle = inlineCssToStyle(tree.attributes['style'], errorHandler);
-      if (newStyle != null) {
-        tree.style = tree.style.merge(newStyle);
-      }
-    }
-
-    tree.children.forEach((e) => _applyInlineStyles(e, errorHandler));
+    // if (tree.attributes.containsKey("style")) {
+    //   final newStyle = inlineCssToStyle(tree.attributes['style'], errorHandler);
+    //   if (newStyle != null) {
+    //     tree.style = tree.style.merge(newStyle);
+    //   }
+    // }
+    
+    // tree.children.forEach((e) => _applyInlineStyles(e, errorHandler));
     return tree;
   }
 
@@ -371,9 +372,10 @@ class HtmlParser extends StatelessWidget {
               );
       }
     }
-
+    
     //Return the correct InlineSpan based on the element type.
-    if (tree.style.display == Display.BLOCK && tree.children.isNotEmpty) {
+    if (tree.style.display == Display.BLOCK &&
+        (tree.children.isNotEmpty || tree.element?.localName == "hr")) {
       if (newContext.parser.selectable) {
         return TextSpan(
           style: newContext.style.generateTextStyle(),

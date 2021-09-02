@@ -480,9 +480,7 @@ class MathElement extends ReplacedElement {
 
 ReplacedElement parseReplacedElement(
   dom.Element element,
-  NavigationDelegate? navigationDelegateForIframe, {
-  Map<String, dynamic>? configs,
-}) {
+  NavigationDelegate? navigationDelegateForIframe,) {
   switch (element.localName) {
     case "audio":
       final sources = <String?>[
@@ -510,7 +508,7 @@ ReplacedElement parseReplacedElement(
           name: "video",
           src: [src],
           style: Style(),
-          apiKey: configs?['youtube_api_key'].toString() ?? 'AIzaSyAyFhyWwa61XumcG8MEzSk1cf3qRcKDWIk',
+          apiKey: 'AIzaSyAyFhyWwa61XumcG8MEzSk1cf3qRcKDWIk',
           showControls: element.attributes['controls'] != null,
           loop: element.attributes['loop'] != null,
           autoplay: element.attributes['autoplay'] != null,

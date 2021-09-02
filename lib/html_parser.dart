@@ -51,8 +51,6 @@ class HtmlParser extends StatelessWidget {
   final ImageErrorListener? onImageError;
   final OnMathError? onMathError;
   final bool shrinkWrap;
-  final Map<String, String>? headers;
-  final Map<String, dynamic>? configs;
   final bool selectable;
 
   final Map<String, Style> style;
@@ -78,8 +76,6 @@ class HtmlParser extends StatelessWidget {
     required this.imageRenders,
     required this.tagsList,
     required this.navigationDelegateForIframe,
-    this.headers,
-    this.configs,
   })  : this._onAnchorTap = onAnchorTap != null
           ? onAnchorTap
           : key != null
@@ -96,8 +92,6 @@ class HtmlParser extends StatelessWidget {
       tagsList,
       navigationDelegateForIframe,
       context,
-      headers: this.headers,
-      configs: this.configs,
     );
     StyledElement? externalCssStyledTree;
     if (declarations.isNotEmpty) {
@@ -162,10 +156,9 @@ class HtmlParser extends StatelessWidget {
     dom.Element html,
     List<String> customRenderTags,
     List<String> tagsList,
-    NavigationDelegate? navigationDelegateForIframe,    BuildContext context, {
-    Map<String, String>? headers,
-    Map<String, dynamic>? configs,
-  }) {
+    NavigationDelegate? navigationDelegateForIframe,   
+    BuildContext context,
+    ) {
     StyledElement tree = StyledElement(
       name: "[Tree Root]",
       children: <StyledElement>[],
@@ -185,8 +178,6 @@ class HtmlParser extends StatelessWidget {
         customRenderTags,
         tagsList,
         navigationDelegateForIframe,
-        headers,
-        configs,
       );
       if (e != null) {
         tree.children.add(e);
@@ -204,9 +195,7 @@ class HtmlParser extends StatelessWidget {
     dom.Node node,
     List<String> customRenderTags,
     List<String> tagsList,
-    NavigationDelegate? navigationDelegateForIframe,
-    Map<String, String>? headers,
-    Map<String, dynamic>? configs, {
+    NavigationDelegate? navigationDelegateForIframe, {
     Style? pInlineStyle,
   }) {
     final inlineStyle = (node.attributes != null && node.attributes['style'] != null)
@@ -221,8 +210,6 @@ class HtmlParser extends StatelessWidget {
         customRenderTags,
         tagsList,
         navigationDelegateForIframe,
-        headers,
-        configs,
         pInlineStyle: inlineStyle,
       );
       if (e != null) children.add(e);
@@ -238,7 +225,7 @@ class HtmlParser extends StatelessWidget {
       } else if (INTERACTABLE_ELEMENTS.contains(node.localName)) {
         return parseInteractableElement(node, children, inlineStyle: inlineStyle);
       } else if (REPLACED_ELEMENTS.contains(node.localName)) {
-        return parseReplacedElement(node, navigationDelegateForIframe, configs: configs);
+        return parseReplacedElement(node, navigationDelegateForIframe);
       } else if (LAYOUT_ELEMENTS.contains(node.localName)) {
         return parseLayoutElement(node, children);
       } else if (TABLE_CELL_ELEMENTS.contains(node.localName)) {

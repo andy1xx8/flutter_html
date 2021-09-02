@@ -65,7 +65,6 @@ class Html extends StatelessWidget {
     this.tagsList = const [],
     this.style = const {},
     this.navigationDelegateForIframe,
-    this.configs,
   })  : document = null,
         assert(data != null),
         _anchorKey = anchorKey ?? GlobalKey(),
@@ -87,7 +86,6 @@ class Html extends StatelessWidget {
     this.tagsList = const [],
     this.style = const {},
     this.navigationDelegateForIframe,
-    this.configs,
   })  : data = null,
         assert(document != null),
         _anchorKey = anchorKey ?? GlobalKey(),
@@ -126,7 +124,6 @@ class Html extends StatelessWidget {
   /// A parameter that should be set when the HTML widget is expected to be
   /// flexible
   final bool shrinkWrap;
-  final Map<String, dynamic>? configs;
 
   /// A function that defines what to do when an image is tapped
   final OnTap? onImageTap;
@@ -176,7 +173,6 @@ class Html extends StatelessWidget {
         imageRenders: customImageRenders.isNotEmpty? customImageRenders: defaultImageRenders,
         tagsList: tagsList.isEmpty ? Html.tags : tagsList,
         navigationDelegateForIframe: navigationDelegateForIframe,
-        configs: configs,
       ),
     );
   }

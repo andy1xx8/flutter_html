@@ -272,7 +272,7 @@ class _MyHomePageState extends State<MyHomePage> {
             }
           },
           customImageRenders: {
-            networkSourceMatcher(domains: ["flutter.dev"]): (context, attributes, element, cacheManager) {
+            networkSourceMatcher(domains: ["flutter.dev"]): (context, attributes, element) {
               return FlutterLogo(size: 36);
             },
             networkSourceMatcher(domains: ["mydomain.com"]): networkImageRender(

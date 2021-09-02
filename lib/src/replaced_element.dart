@@ -4,7 +4,6 @@ import 'package:chewie/chewie.dart';
 import 'package:chewie_audio/chewie_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_html/html_parser.dart';
 import 'package:flutter_html/src/anchor.dart';
 import 'package:flutter_html/src/android_youtube_player_screen.dart';
@@ -71,23 +70,19 @@ class TextContentElement extends ReplacedElement {
 class ImageContentElement extends ReplacedElement {
   final String? src;
   final String? alt;
-  final Map<String, String>? headers;
-  final BaseCacheManager? cacheManager;
 
   ImageContentElement({
     required String name,
     required this.src,
     required this.alt,
     required dom.Element node,
-    this.headers,
-    this.cacheManager,
   }) : super(name: name, style: Style(), node: node, alignment: PlaceholderAlignment.middle, elementId: node.id);
 
   @override
   Widget toWidget(RenderContext context) {
     for (final entry in context.parser.imageRenders.entries) {
       if (entry.key.call(attributes, element)) {
-        final widget = entry.value.call(context, attributes, element, cacheManager);
+        final widget = entry.value.call(context, attributes, element);
         return Builder(builder: (buildContext) {
           return GestureDetector(
             key: AnchorKey.of(context.parser.key, this),
@@ -484,12 +479,11 @@ class MathElement extends ReplacedElement {
 ReplacedElement parseReplacedElement(
   dom.Element element,
   NavigationDelegate? navigationDelegateForIframe, {
-  Map<String, String>? headers,
   Map<String, dynamic>? configs,
 }) {
+  //TODO: Move this part to image renderers so the user can handle their own way
   final bool isImageEnabled = configs?['image_enabled'] ?? true;
   final bool isPrefetchImageEnabled = (configs?['prefetch_image_enabled'] ?? true);
-  final BaseCacheManager? cacheManager = configs?['cache_manager'];
 
   switch (element.localName) {
     case "audio":
@@ -532,7 +526,7 @@ ReplacedElement parseReplacedElement(
         if (giphyId != null && giphyId.isNotEmpty) {
           if (isImageEnabled) {
             final src = GiphyUtils.buildGifUrlFromId(giphyId);
-            return buildImageElement(element, src, cacheManager, headers);
+            return buildImageElement(element, src);
           } else {
             return EmptyContentElement(name: element.localName ?? 'Empty');
           }
@@ -544,7 +538,6 @@ ReplacedElement parseReplacedElement(
           height: double.tryParse(element.attributes['height'] ?? ""),
           navigationDelegate: navigationDelegateForIframe,
           node: element,
-          headers: headers,
         );
       }
     case "img":
@@ -553,9 +546,9 @@ ReplacedElement parseReplacedElement(
         final giphyId = GiphyUtils.getId(src);
         if (giphyId != null && giphyId.isNotEmpty) {
           final src = GiphyUtils.buildGifUrlFromId(giphyId);
-          return buildImageElement(element, src, cacheManager, headers);
+          return buildImageElement(element, src);
         } else {
-          return buildImageElement(element, src, cacheManager, headers);
+          return buildImageElement(element, src);
         }
       } else {
         return EmptyContentElement(name: element.localName ?? 'Empty');
@@ -601,18 +594,11 @@ ReplacedElement parseReplacedElement(
   }
 }
 
-ReplacedElement buildImageElement(
-  dom.Element element,
-  String src,
-  BaseCacheManager? cacheManager,
-  Map<String, String>? headers,
-) {
+ReplacedElement buildImageElement(dom.Element element, String src) {
   return ImageContentElement(
     name: "img",
     src: src,
     alt: element.attributes['alt'],
     node: element,
-    headers: headers,
-    cacheManager: cacheManager,
   );
 }

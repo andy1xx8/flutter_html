@@ -271,8 +271,7 @@ class _MyHomePageState extends State<MyHomePage> {
             "table": (context, child) {
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child:
-                    (context.tree as TableLayoutElement).toWidget(context),
+                child: (context.tree as TableLayoutElement).toWidget(context),
               );
             },
             "bird": (RenderContext context, Widget child) {
@@ -289,24 +288,19 @@ class _MyHomePageState extends State<MyHomePage> {
             },
           },
           customImageRenders: {
-            networkSourceMatcher(domains: ["flutter.dev"]):
-                (context, attributes, element, cacheManager) {
+            networkSourceMatcher(domains: ["flutter.dev"]): (context, attributes, element) {
               return FlutterLogo(size: 36);
             },
-            networkSourceMatcher(domains: ["mydomain.com"]):
-                networkImageRender(
+            networkSourceMatcher(domains: ["mydomain.com"]): networkImageRender(
               headers: {"Custom-Header": "some-value"},
               altWidget: (alt) => Text(alt ?? ""),
               loadingWidget: () => Text("Loading..."),
             ),
             // On relative paths starting with /wiki, prefix with a base url
-            (attr, _) =>
-                    attr["src"] != null && attr["src"]!.startsWith("/wiki"):
-                networkImageRender(
-                    mapUrl: (url) => "https://upload.wikimedia.org" + url!),
+            (attr, _) => attr["src"] != null && attr["src"]!.startsWith("/wiki"):
+                networkImageRender(mapUrl: (url) => "https://upload.wikimedia.org" + url!),
             // Custom placeholder image for broken links
-            networkSourceMatcher():
-                networkImageRender(altWidget: (_) => FlutterLogo()),
+            networkSourceMatcher(): networkImageRender(altWidget: (_) => FlutterLogo()),
           },
           onLinkTap: (url, _, __, ___) {
             print("Opening $url...");

@@ -1,23 +1,23 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_html/html_parser.dart';
-import 'package:flutter_html/src/utils.dart' as utils;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_svg/parser.dart';
 import 'package:html/dom.dart' as dom;
 
 typedef ImageSourceMatcher = bool Function(
-  Map<String, String> attributes,
-  dom.Element? element,
-);
+    Map<String, String> attributes,
+    dom.Element? element,
+    );
 
-final _dataUriFormat = RegExp("^(?<scheme>data):(?<mime>image\/[\\w\+\-\.]+)(?<encoding>;base64)?\,(?<data>.*)");
+final _dataUriFormat = RegExp(
+    "^(?<scheme>data):(?<mime>image\/[\\w\+\-\.]+)(?<encoding>;base64)?\,(?<data>.*)");
 
-ImageSourceMatcher dataUriMatcher({String? encoding = 'base64', String? mime}) => (attributes, element) {
+ImageSourceMatcher dataUriMatcher(
+    {String? encoding = 'base64', String? mime}) =>
+        (attributes, element) {
       if (_src(attributes) == null) return false;
       final dataUri = _dataUriFormat.firstMatch(_src(attributes)!);
       return dataUri != null &&
@@ -30,7 +30,7 @@ ImageSourceMatcher networkSourceMatcher({
   List<String>? domains,
   String? extension,
 }) =>
-    (attributes, element) {
+        (attributes, element) {
       if (_src(attributes) == null) return false;
       try {
         final src = Uri.parse(_src(attributes)!);
@@ -42,56 +42,56 @@ ImageSourceMatcher networkSourceMatcher({
       }
     };
 
-ImageSourceMatcher assetUriMatcher() =>
-    (attributes, element) => _src(attributes) != null && _src(attributes)!.startsWith("asset:");
+ImageSourceMatcher assetUriMatcher() => (attributes, element) =>
+_src(attributes) != null && _src(attributes)!.startsWith("asset:");
 
 typedef ImageRender = Widget? Function(
-  RenderContext context,
-  Map<String, String> attributes,
-  dom.Element? element,
-  BaseCacheManager? cacheManager,
-);
+    RenderContext context,
+    Map<String, String> attributes,
+    dom.Element? element,
+    );
 
-ImageRender base64ImageRender() => (context, attributes, element, cacheManager) {
-      final decodedImage = base64.decode(_src(attributes)!.split("base64,")[1].trim());
-      precacheImage(
-        MemoryImage(decodedImage),
-        context.buildContext,
-        onError: (exception, StackTrace? stackTrace) {
-          context.parser.onImageError?.call(exception, stackTrace);
-        },
-      );
-      return Image.memory(
-        decodedImage,
-        frameBuilder: (ctx, child, frame, _) {
-          if (frame == null) {
-            return Text(_alt(attributes) ?? "", style: context.style.generateTextStyle());
-          }
-          return child;
-        },
-      );
-    };
+ImageRender base64ImageRender() => (context, attributes, element) {
+  final decodedImage =
+  base64.decode(_src(attributes)!.split("base64,")[1].trim());
+  precacheImage(
+    MemoryImage(decodedImage),
+    context.buildContext,
+    onError: (exception, StackTrace? stackTrace) {
+      context.parser.onImageError?.call(exception, stackTrace);
+    },
+  );
+  return Image.memory(
+    decodedImage,
+    frameBuilder: (ctx, child, frame, _) {
+      if (frame == null) {
+        return Text(_alt(attributes) ?? "",
+            style: context.style.generateTextStyle());
+      }
+      return child;
+    },
+  );
+};
 
 ImageRender assetImageRender({
   double? width,
   double? height,
 }) =>
-    (context, attributes, element, cacheManager) {
+        (context, attributes, element) {
       final assetPath = _src(attributes)!.replaceFirst('asset:', '');
       if (_src(attributes)!.endsWith(".svg")) {
-        return SvgPicture.asset(
-          assetPath,
-          width: width ?? _width(attributes),
-          height: height ?? _height(attributes));
+        return SvgPicture.asset(assetPath,
+            width: width ?? _width(attributes),
+            height: height ?? _height(attributes));
       } else {
         return Image.asset(
           assetPath,
-          filterQuality: FilterQuality.medium,
           width: width ?? _width(attributes),
           height: height ?? _height(attributes),
           frameBuilder: (ctx, child, frame, _) {
             if (frame == null) {
-              return Text(_alt(attributes) ?? "", style: context.style.generateTextStyle());
+              return Text(_alt(attributes) ?? "",
+                  style: context.style.generateTextStyle());
             }
             return child;
           },
@@ -107,7 +107,7 @@ ImageRender networkImageRender({
   Widget Function(String?)? altWidget,
   Widget Function()? loadingWidget,
 }) =>
-    (context, attributes, element, cacheManager) {
+        (context, attributes, element) {
       final src = mapUrl?.call(_src(attributes)) ?? _src(attributes)!;
       precacheImage(
         NetworkImage(
@@ -120,89 +120,95 @@ ImageRender networkImageRender({
         },
       );
       Completer<Size> completer = Completer();
-      Image image = Image(
-        image: CachedNetworkImageProvider(src, cacheManager: cacheManager, headers: headers),
-        filterQuality: FilterQuality.low,
-        frameBuilder: (ctx, child, frame, _) {
-          if (frame == null) {
-            if (!completer.isCompleted) {
-              completer.completeError("error");
-            }
-            return child;
-          } else {
-            return child;
+      Image image = Image.network(src, frameBuilder: (ctx, child, frame, _) {
+        if (frame == null) {
+          if (!completer.isCompleted) {
+            completer.completeError("error");
           }
-        },
-      );
+          return child;
+        } else {
+          return child;
+        }
+      });
 
-      image.image.resolve(ImageConfiguration()).addListener(
-            ImageStreamListener((ImageInfo image, bool synchronousCall) {
-              var myImage = image.image;
-              Size size = Size(myImage.width.toDouble(), myImage.height.toDouble());
-              if (!completer.isCompleted) {
-                completer.complete(size);
-              }
-            }, onError: (object, stacktrace) {
-              if (!completer.isCompleted) {
-                completer.completeError(object);
-              }
-            }),
-          );
+      var listener =
+      ImageStreamListener((ImageInfo image, bool synchronousCall) {
+        var myImage = image.image;
+        Size size = Size(myImage.width.toDouble(), myImage.height.toDouble());
+        if (!completer.isCompleted) {
+          completer.complete(size);
+        }
+      }, onError: (object, stacktrace) {
+        if (!completer.isCompleted) {
+          completer.completeError(object);
+        }
+      });
+
+      image.image.resolve(ImageConfiguration()).addListener(listener);
       return FutureBuilder<Size>(
         future: completer.future,
         builder: (BuildContext buildContext, AsyncSnapshot<Size> snapshot) {
+          if (completer.isCompleted) {
+            image.image.resolve(ImageConfiguration()).removeListener(listener);
+          }
           if (snapshot.hasData) {
-            final w = width ?? _width(attributes) ?? snapshot.data!.width;
-            final h = height ?? _height(attributes) ?? snapshot.data!.height;
-            final size = utils.calcSize(buildContext, w, h, snapshot.data!.aspectRatio);
-
-            return Image(
-              image: CachedNetworkImageProvider(src, cacheManager: cacheManager, headers: headers),
-              filterQuality: FilterQuality.low,
-              fit: BoxFit.scaleDown,
-              width: size.width,
-              height: size.height,
-              frameBuilder: (ctx, child, frame, _) {
-                if (frame == null) {
-                  return altWidget?.call(_alt(attributes)) ??
-                      Text(_alt(attributes) ?? "", style: context.style.generateTextStyle());
-                }
-                return child;
-              },
+            return Container(
+              constraints: BoxConstraints(
+                  maxWidth: width ?? _width(attributes) ?? snapshot.data!.width,
+                  maxHeight:
+                  (width ?? _width(attributes) ?? snapshot.data!.width) /
+                      _aspectRatio(attributes, snapshot)),
+              child: AspectRatio(
+                aspectRatio: _aspectRatio(attributes, snapshot),
+                child: Image.network(
+                  src,
+                  headers: headers,
+                  width: width ?? _width(attributes) ?? snapshot.data!.width,
+                  height: height ?? _height(attributes),
+                  frameBuilder: (ctx, child, frame, _) {
+                    if (frame == null) {
+                      return altWidget?.call(_alt(attributes)) ??
+                          Text(_alt(attributes) ?? "",
+                              style: context.style.generateTextStyle());
+                    }
+                    return child;
+                  },
+                ),
+              ),
             );
           } else if (snapshot.hasError) {
             return altWidget?.call(_alt(attributes)) ??
-                Text(_alt(attributes) ?? "", style: context.style.generateTextStyle());
+                Text(_alt(attributes) ?? "",
+                    style: context.style.generateTextStyle());
           } else {
-            return loadingWidget?.call() ?? const SizedBox();
+            return loadingWidget?.call() ?? const CircularProgressIndicator();
           }
         },
       );
     };
 
-ImageRender svgDataImageRender() => (context, attributes, element, cacheManager) {
-      final dataUri = _dataUriFormat.firstMatch(_src(attributes)!);
-      final data = dataUri?.namedGroup('data');
-      if (data == null) return null;
-      if (dataUri?.namedGroup('encoding') == ';base64') {
-        final decodedImage = base64.decode(data.trim());
-        return SvgPicture.memory(
-          decodedImage,
-          fit: BoxFit.contain,
-          width: _width(attributes),
-          height: _height(attributes),
-        );
-      }
-      return SvgPicture.string(Uri.decodeFull(data));
-    };
+ImageRender svgDataImageRender() => (context, attributes, element) {
+  final dataUri = _dataUriFormat.firstMatch(_src(attributes)!);
+  final data = dataUri?.namedGroup('data');
+  if (data == null) return null;
+  if (dataUri?.namedGroup('encoding') == ';base64') {
+    final decodedImage = base64.decode(data.trim());
+    return SvgPicture.memory(
+      decodedImage,
+      width: _width(attributes),
+      height: _height(attributes),
+    );
+  }
+  return SvgPicture.string(Uri.decodeFull(data));
+};
 
-ImageRender svgNetworkImageRender() => (context, attributes, element, cacheManager) {
-      return SvgPicture.network(
-        attributes["src"]!,
-        width: _width(attributes),
-        height: _height(attributes),
-      );
-    };
+ImageRender svgNetworkImageRender() => (context, attributes, element) {
+  return SvgPicture.network(
+    attributes["src"]!,
+    width: _width(attributes),
+    height: _height(attributes),
+  );
+};
 
 final Map<ImageSourceMatcher, ImageRender> defaultImageRenders = {
   dataUriMatcher(mime: 'image/svg+xml', encoding: null): svgDataImageRender(),
@@ -222,21 +228,28 @@ String? _alt(Map<String, String> attributes) {
 
 double? _height(Map<String, String> attributes) {
   final heightString = attributes["height"];
-  return heightString == null ? heightString as double? : double.tryParse(heightString);
+  return heightString == null
+      ? heightString as double?
+      : double.tryParse(heightString);
 }
 
 double? _width(Map<String, String> attributes) {
   final widthString = attributes["width"];
-  return widthString == null ? widthString as double? : double.tryParse(widthString);
+  return widthString == null
+      ? widthString as double?
+      : double.tryParse(widthString);
 }
 
-double _aspectRatio(Map<String, String> attributes, AsyncSnapshot<Size> calculated) {
+double _aspectRatio(
+    Map<String, String> attributes, AsyncSnapshot<Size> calculated) {
   final heightString = attributes["height"];
   final widthString = attributes["width"];
   if (heightString != null && widthString != null) {
     final height = double.tryParse(heightString);
     final width = double.tryParse(widthString);
-    return height == null || width == null ? calculated.data!.aspectRatio : width / height;
+    return height == null || width == null
+        ? calculated.data!.aspectRatio
+        : width / height;
   }
   return calculated.data!.aspectRatio;
 }

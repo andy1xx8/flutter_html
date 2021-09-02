@@ -481,10 +481,6 @@ ReplacedElement parseReplacedElement(
   NavigationDelegate? navigationDelegateForIframe, {
   Map<String, dynamic>? configs,
 }) {
-  //TODO: Move this part to image renderers so the user can handle their own way
-  final bool isImageEnabled = configs?['image_enabled'] ?? true;
-  final bool isPrefetchImageEnabled = (configs?['prefetch_image_enabled'] ?? true);
-
   switch (element.localName) {
     case "audio":
       final sources = <String?>[
@@ -524,12 +520,8 @@ ReplacedElement parseReplacedElement(
       } else {
         final giphyId = GiphyUtils.getId(src);
         if (giphyId != null && giphyId.isNotEmpty) {
-          if (isImageEnabled) {
-            final src = GiphyUtils.buildGifUrlFromId(giphyId);
-            return buildImageElement(element, src);
-          } else {
-            return EmptyContentElement(name: element.localName ?? 'Empty');
-          }
+          final src = GiphyUtils.buildGifUrlFromId(giphyId);
+          return buildImageElement(element, src);
         }
         return IframeContentElement(
           name: "iframe",
@@ -542,16 +534,12 @@ ReplacedElement parseReplacedElement(
       }
     case "img":
       final src = element.attributes['src'] ?? '';
-      if (isImageEnabled) {
-        final giphyId = GiphyUtils.getId(src);
-        if (giphyId != null && giphyId.isNotEmpty) {
-          final src = GiphyUtils.buildGifUrlFromId(giphyId);
-          return buildImageElement(element, src);
-        } else {
-          return buildImageElement(element, src);
-        }
+      final giphyId = GiphyUtils.getId(src);
+      if (giphyId != null && giphyId.isNotEmpty) {
+        final src = GiphyUtils.buildGifUrlFromId(giphyId);
+        return buildImageElement(element, src);
       } else {
-        return EmptyContentElement(name: element.localName ?? 'Empty');
+        return buildImageElement(element, src);
       }
     case "video":
       final sources = <String?>[

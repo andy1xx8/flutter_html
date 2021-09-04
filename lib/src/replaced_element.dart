@@ -527,9 +527,11 @@ ReplacedElement _parseIframeElement(
 
   final giphyId = GiphyUtils.getId(src);
   if (giphyId != null && giphyId.isNotEmpty) {
+    final url = GiphyUtils.builUrlFromId(giphyId);
+    element.attributes['src'] = url;
     return ImageContentElement(
       name: "img",
-      src: GiphyUtils.builUrlFromId(giphyId),
+      src: url,
       alt: element.attributes['alt'],
       node: element,
     );
@@ -549,6 +551,7 @@ ReplacedElement _parseImgElement(dom.Element element) {
   final giphyId = GiphyUtils.getId(src);
   if (giphyId != null && giphyId.isNotEmpty) {
     src = GiphyUtils.builUrlFromId(giphyId);
+    element.attributes['src'] = src;
   }
   return ImageContentElement(
     name: "img",

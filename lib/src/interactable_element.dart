@@ -24,21 +24,21 @@ enum Gesture {
 
 InteractableElement parseInteractableElement(
   dom.Element element,
-  List<StyledElement> children, {
-  Style? inlineStyle,
-}) {
+  List<StyledElement> children,
+) {
   switch (element.localName) {
     case "a":
       return InteractableElement(
-          name: element.localName!,
-          children: children,
-          href: element.attributes['href'],
-          style: (inlineStyle?.copyWith() ?? Style()).copyWith(
-            color: Colors.blue,
-            textDecoration: TextDecoration.underline,
-          ),
-          node: element,
-          elementId: element.id);
+        name: element.localName!,
+        children: children,
+        href: element.attributes['href'],
+        style: Style(
+          color: Colors.blue,
+          textDecoration: TextDecoration.underline,
+        ),
+        node: element,
+        elementId: element.id,
+      );
 
     /// will never be called, just to suppress missing return warning
     default:
@@ -47,7 +47,7 @@ InteractableElement parseInteractableElement(
           children: children,
           node: element,
           href: '',
-          style: inlineStyle?.copyWith() ?? Style(),
+          style: Style(),
           elementId: "[[No ID]]");
   }
 }

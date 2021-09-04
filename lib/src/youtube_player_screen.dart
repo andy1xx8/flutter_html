@@ -1,24 +1,25 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_html/src/html_elements.dart';
 import 'package:flutter_youtube_view/flutter_youtube_view.dart';
 
-class AndroidYoutubePlayerScreen extends StatefulWidget {
+class YoutubePlayerScreen extends StatefulWidget {
   final String title;
   final String url;
+  final String videoId;
   final Function? onOpenYoutubeAppClicked;
 
-  AndroidYoutubePlayerScreen(
+  YoutubePlayerScreen(
     this.title,
-    this.url, {
+    this.url,
+    this.videoId, {
     this.onOpenYoutubeAppClicked,
   });
 
   @override
-  _AndroidYoutubePlayerScreenState createState() => _AndroidYoutubePlayerScreenState();
+  _YoutubePlayerScreenState createState() => _YoutubePlayerScreenState();
 }
 
-class _AndroidYoutubePlayerScreenState extends State<AndroidYoutubePlayerScreen> {
+class _YoutubePlayerScreenState extends State<YoutubePlayerScreen> {
   @override
   void initState() {
     super.initState();
@@ -31,7 +32,6 @@ class _AndroidYoutubePlayerScreenState extends State<AndroidYoutubePlayerScreen>
 
   @override
   Widget build(BuildContext context) {
-    var youtubeId = YoutubeVideoContentElement.getYoutubeId(widget.url);
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -45,7 +45,7 @@ class _AndroidYoutubePlayerScreenState extends State<AndroidYoutubePlayerScreen>
                 Navigator.of(context).maybePop();
               }
             },
-            icon: Icon(
+            icon: const Icon(
               Icons.shop_two,
               size: 18,
               color: Colors.white,
@@ -56,7 +56,7 @@ class _AndroidYoutubePlayerScreenState extends State<AndroidYoutubePlayerScreen>
       body: FlutterYoutubeView(
         scaleMode: YoutubeScaleMode.fitWidth, // <option> fitWidth, fitHeight
         params: YoutubeParam(
-          videoId: youtubeId!,
+          videoId: widget.videoId,
           showUI: true,
           startSeconds: 0.0, // <option>
           autoPlay: false,

@@ -105,7 +105,7 @@ class TableLayoutElement extends LayoutElement {
     for (var row in rows) {
       int columni = 0;
       for (var child in row.children) {
-        if (columni > columnMax - 1 ) {
+        if (columni > columnMax - 1) {
           break;
         }
         while (columnRowOffset[columni] > 0) {
@@ -339,7 +339,11 @@ LayoutElement parseLayoutElement(
         return EmptyLayoutElement(name: "empty");
       }
       return DetailsContentElement(
-          node: element, name: element.localName!, children: children, elementList: element.children);
+        node: element,
+        name: element.localName!,
+        children: children,
+        elementList: element.children,
+      );
     case "table":
       return TableLayoutElement(
         name: element.localName!,

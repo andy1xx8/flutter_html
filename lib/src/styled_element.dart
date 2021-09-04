@@ -150,7 +150,6 @@ StyledElement parseStyledElement(
       styledElement.style = styledElement.style.copyWith(
         margin: EdgeInsets.all(0),
         display: containsClazz(element, 'bbCodeBlock') ? Display.BLOCK : Display.INLINE_BLOCK,
-        //  display: containsClazz(element, 'inline') ? Display.INLINE_BLOCK : Display.BLOCK,
       );
       if (children.isEmpty) return EmptyContentElement(name: '');
       break;

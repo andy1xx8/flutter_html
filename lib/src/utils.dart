@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 Map<String, String> namedColors = {
@@ -104,4 +103,76 @@ Size calcSize(BuildContext context, double w, double h, double ratio) {
   }
 
   return new Size(w, h);
+}
+
+class GiphyUtils {
+  static final List<RegExp> URL_REGEX_LIST = [
+    RegExp('^(https?://(www\\.)?)?media\\.giphy\\.com/media/(?<id>\\w+)/giphy\\.gif'),
+    RegExp('^(https?://(www\\.)?)?media\\d+\\.giphy\\.com/media/(?<id>\\w+)/giphy\\.gif'),
+    RegExp('^(https?://(www\\.)?)?giphy\\.com/gifs/(\\w+)-(?<id>\\w+)'),
+    RegExp('^(https?://(www\\.)?)?giphy\\.com/embed/(?<id>\\w+)'),
+  ];
+
+  GiphyUtils._();
+
+  static String? getId(String url) {
+    return URL_REGEX_LIST
+        .where((regex) => regex.hasMatch(url))
+        .map((regex) => regex.firstMatch(url))
+        .where((element) => element != null)
+        .map((match) => match?.namedGroup("id"))
+        .firstWhere((element) => true, orElse: () => null);
+  }
+
+  static String builUrlFromId(String id) {
+    return 'https://i.giphy.com/$id.gif';
+  }
+}
+
+class YoutubeUtils {
+  static final URL_REGEXP_LIST = [
+    RegExp(r"v=([_\-a-zA-Z0-9]{11}).*$"),
+    RegExp(r"^embed\/([_\-a-zA-Z0-9]{11}).*$"),
+    RegExp(r"\/([_\-a-zA-Z0-9]{11}).*$")
+  ];
+  static const String YT_THUMBNAIL_HOST = "https://img.youtube.com/vi/";
+  static const String YT_THUMBNAIL_IMG = "/mqdefault.jpg";
+
+  YoutubeUtils._();
+
+  static bool isYoutubeUrl(url) {
+    return getYoutubeId(url) != null;
+  }
+
+  /// Converts fully qualified YouTube Url to video id.
+  static String? getYoutubeId(String url) {
+    try {
+      if ((url.contains('youtube.com') || url.contains('youtu.be'))) {
+        for (var exp in URL_REGEXP_LIST) {
+          Match? match = exp.firstMatch(url);
+          if (match != null && match.groupCount >= 1) return match.group(1);
+        }
+      }
+      return null;
+    } catch (ex) {
+      return null;
+    }
+  }
+
+  static String? getYoutubeThumbnail(String url) {
+    try {
+      final String? youtubeId = YoutubeUtils.getYoutubeId(url);
+      if (youtubeId == null || youtubeId.isEmpty) return null;
+      return '$YT_THUMBNAIL_HOST$youtubeId$YT_THUMBNAIL_IMG';
+    } catch (ex) {
+      return null;
+    }
+  }
+
+  //youtubeId: id video yotuube
+  // return url of thumbnail or null
+  static String? getYoutubeThumbnailById(String? youtubeId) {
+    if (youtubeId == null) return null;
+    return '$YT_THUMBNAIL_HOST$youtubeId$YT_THUMBNAIL_IMG';
+  }
 }

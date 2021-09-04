@@ -6,13 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_html/html_parser.dart';
 import 'package:flutter_html/src/anchor.dart';
-import 'package:flutter_html/src/android_youtube_player_screen.dart';
-import 'package:flutter_html/src/giphy_utils.dart';
 import 'package:flutter_html/src/html_elements.dart';
 import 'package:flutter_html/src/utils.dart';
-import 'package:flutter_html/src/widgets/iframe_unsupported.dart'
-    if (dart.library.io) 'package:flutter_html/src/widgets/iframe_mobile.dart'
-    if (dart.library.html) 'package:flutter_html/src/widgets/iframe_web.dart';
+import 'package:flutter_html/src/widgets/iframe_mobile.dart';
+import 'package:flutter_html/src/youtube_player_screen.dart';
 import 'package:flutter_html/style.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -76,7 +73,13 @@ class ImageContentElement extends ReplacedElement {
     required this.src,
     required this.alt,
     required dom.Element node,
-  }) : super(name: name, style: Style(), node: node, alignment: PlaceholderAlignment.middle, elementId: node.id);
+  }) : super(
+          name: name,
+          style: Style(),
+          node: node,
+          alignment: PlaceholderAlignment.middle,
+          elementId: node.id,
+        );
 
   @override
   Widget toWidget(RenderContext context) {
@@ -192,10 +195,7 @@ class VideoContentElement extends ReplacedElement {
 
 /// [VideoContentElement] is a [ContentElement] with a video file as its content.
 class YoutubeVideoContentElement extends ReplacedElement {
-  static const String YT_THUMBNAIL_HOST = "https://img.youtube.com/vi/";
-  static const String YT_THUMBNAIL_IMG = "/mqdefault.jpg";
-
-  final List<String> src;
+  final String url;
   final String apiKey;
   final bool showControls;
   final bool autoplay;
@@ -207,7 +207,7 @@ class YoutubeVideoContentElement extends ReplacedElement {
   YoutubeVideoContentElement({
     required String name,
     required Style style,
-    required this.src,
+    required this.url,
     required this.apiKey,
     this.showControls = false,
     this.autoplay = false,
@@ -220,8 +220,8 @@ class YoutubeVideoContentElement extends ReplacedElement {
 
   @override
   Widget toWidget(RenderContext context) {
-    var youtubeId = getYoutubeId(src.first);
-    final String thumbnail = getYoutubeThumbnailById(youtubeId)!;
+    final videoId = YoutubeUtils.getYoutubeId(url);
+    final thumbnail = YoutubeUtils.getYoutubeThumbnailById(videoId)!;
     return InkWell(
       child: AspectRatio(
         aspectRatio: 16 / 9,
@@ -236,7 +236,7 @@ class YoutubeVideoContentElement extends ReplacedElement {
                       thumbnail,
                       fit: BoxFit.cover,
                     )
-                  : SizedBox(),
+                  : const SizedBox(),
               Container(
                 width: 45,
                 height: 45,
@@ -244,7 +244,7 @@ class YoutubeVideoContentElement extends ReplacedElement {
                   shape: BoxShape.circle,
                   color: Color.fromRGBO(43, 43, 43, 0.6),
                 ),
-                child: Center(
+                child: const Center(
                   child: Icon(
                     Icons.play_circle_outline,
                     color: Colors.white,
@@ -259,54 +259,12 @@ class YoutubeVideoContentElement extends ReplacedElement {
       onTap: () {
         Navigator.of(context.buildContext).push(
           MaterialPageRoute(
-            builder: (_) => AndroidYoutubePlayerScreen('', src.first),
+            builder: (_) => YoutubePlayerScreen('', url, videoId!),
             settings: null,
           ),
         );
       },
     );
-  }
-
-  static String? getYoutubeThumbnail(String url) {
-    try {
-      final String? youtubeId = getYoutubeId(url);
-      if (youtubeId == null || youtubeId.isEmpty) return null;
-      return '$YT_THUMBNAIL_HOST$youtubeId$YT_THUMBNAIL_IMG';
-    } catch (ex) {
-      return null;
-    }
-  }
-
-  //youtubeId: id video yotuube
-  // return url of thumbnail or null
-  static String? getYoutubeThumbnailById(String? youtubeId) {
-    if (youtubeId == null) return null;
-    return '$YT_THUMBNAIL_HOST$youtubeId$YT_THUMBNAIL_IMG';
-  }
-
-  static bool isYoutubeUrl(url) {
-    return getYoutubeId(url) is String;
-  }
-
-  /// Converts fully qualified YouTube Url to video id.
-  static String? getYoutubeId(String url) {
-    try {
-      if ((url.contains('youtube.com') || url.contains('youtu.be'))) {
-        final exp = [
-          RegExp(r"v=([_\-a-zA-Z0-9]{11}).*$"),
-          RegExp(r"^embed\/([_\-a-zA-Z0-9]{11}).*$"),
-          RegExp(r"\/([_\-a-zA-Z0-9]{11}).*$")
-        ];
-
-        for (var exp in exp) {
-          Match? match = exp.firstMatch(url);
-          if (match != null && match.groupCount >= 1) return match.group(1);
-        }
-      }
-      return null;
-    } catch (ex) {
-      return null;
-    }
   }
 }
 
@@ -478,7 +436,8 @@ class MathElement extends ReplacedElement {
 
 ReplacedElement parseReplacedElement(
   dom.Element element,
-  NavigationDelegate? navigationDelegateForIframe,) {
+  NavigationDelegate? navigationDelegateForIframe,
+) {
   switch (element.localName) {
     case "audio":
       final sources = <String?>[
@@ -498,47 +457,16 @@ ReplacedElement parseReplacedElement(
         node: element,
       );
     case "br":
-      return TextContentElement(text: "\n", style: Style(whiteSpace: WhiteSpace.PRE), element: element, node: element);
+      return TextContentElement(
+        text: "\n",
+        style: Style(whiteSpace: WhiteSpace.PRE),
+        element: element,
+        node: element,
+      );
     case "iframe":
-      final src = element.attributes['src'] ?? '';
-      if (YoutubeVideoContentElement.isYoutubeUrl(src)) {
-        return YoutubeVideoContentElement(
-          name: "video",
-          src: [src],
-          style: Style(),
-          apiKey: 'AIzaSyAyFhyWwa61XumcG8MEzSk1cf3qRcKDWIk',
-          showControls: element.attributes['controls'] != null,
-          loop: element.attributes['loop'] != null,
-          autoplay: element.attributes['autoplay'] != null,
-          muted: element.attributes['muted'] != null,
-          width: double.tryParse(element.attributes['width'] ?? ""),
-          height: double.tryParse(element.attributes['height'] ?? ""),
-          node: element,
-        );
-      } else {
-        final giphyId = GiphyUtils.getId(src);
-        if (giphyId != null && giphyId.isNotEmpty) {
-          final src = GiphyUtils.buildGifUrlFromId(giphyId);
-          return buildImageElement(element, src);
-        }
-        return IframeContentElement(
-          name: "iframe",
-          src: element.attributes['src'],
-          width: double.tryParse(element.attributes['width'] ?? ""),
-          height: double.tryParse(element.attributes['height'] ?? ""),
-          navigationDelegate: navigationDelegateForIframe,
-          node: element,
-        );
-      }
+      return _parseIframeElement(element, navigationDelegateForIframe);
     case "img":
-      final src = element.attributes['src'] ?? '';
-      final giphyId = GiphyUtils.getId(src);
-      if (giphyId != null && giphyId.isNotEmpty) {
-        final src = GiphyUtils.buildGifUrlFromId(giphyId);
-        return buildImageElement(element, src);
-      } else {
-        return buildImageElement(element, src);
-      }
+      return _parseImgElement(element);
     case "video":
       final sources = <String?>[
         if (element.attributes['src'] != null) element.attributes['src'],
@@ -568,19 +496,60 @@ ReplacedElement parseReplacedElement(
         node: element,
       );
     case "ruby":
-      return RubyElement(
-        element: element,
-      );
+      return RubyElement(element: element);
     case "math":
-      return MathElement(
-        element: element,
-      );
+      return MathElement(element: element);
     default:
       return EmptyContentElement(name: element.localName == null ? "[[No Name]]" : element.localName!);
   }
 }
 
-ReplacedElement buildImageElement(dom.Element element, String src) {
+ReplacedElement _parseIframeElement(
+  dom.Element element,
+  NavigationDelegate? navigationDelegateForIframe,
+) {
+  final src = element.attributes['src'] ?? '';
+  if (YoutubeUtils.isYoutubeUrl(src)) {
+    return YoutubeVideoContentElement(
+      name: "video",
+      url: src,
+      style: Style(),
+      apiKey: 'AIzaSyAyFhyWwa61XumcG8MEzSk1cf3qRcKDWIk',
+      showControls: element.attributes['controls'] != null,
+      loop: element.attributes['loop'] != null,
+      autoplay: element.attributes['autoplay'] != null,
+      muted: element.attributes['muted'] != null,
+      width: double.tryParse(element.attributes['width'] ?? ""),
+      height: double.tryParse(element.attributes['height'] ?? ""),
+      node: element,
+    );
+  }
+
+  final giphyId = GiphyUtils.getId(src);
+  if (giphyId != null && giphyId.isNotEmpty) {
+    return ImageContentElement(
+      name: "img",
+      src: GiphyUtils.builUrlFromId(giphyId),
+      alt: element.attributes['alt'],
+      node: element,
+    );
+  }
+  return IframeContentElement(
+    name: "iframe",
+    src: element.attributes['src'],
+    width: double.tryParse(element.attributes['width'] ?? ""),
+    height: double.tryParse(element.attributes['height'] ?? ""),
+    navigationDelegate: navigationDelegateForIframe,
+    node: element,
+  );
+}
+
+ReplacedElement _parseImgElement(dom.Element element) {
+  String src = element.attributes['src'] ?? '';
+  final giphyId = GiphyUtils.getId(src);
+  if (giphyId != null && giphyId.isNotEmpty) {
+    src = GiphyUtils.builUrlFromId(giphyId);
+  }
   return ImageContentElement(
     name: "img",
     src: src,

@@ -82,8 +82,6 @@ class ImageContentElement extends ReplacedElement {
   Widget toWidget(RenderContext context) {
     for (final entry in context.parser.imageRenders.entries) {
       if (entry.key.call(attributes, element)) {
-
-        print('Pass HTML check image: ${entry.key.call(attributes, element)}');
         final widget = entry.value.call(context, attributes, element);
         return Builder(builder: (buildContext) {
           return GestureDetector(
